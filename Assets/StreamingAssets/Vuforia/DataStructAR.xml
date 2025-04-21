@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig>
+  <Tracking>
+    <ImageTarget name="queue" size="1.000000 0.719727" />
+    <ImageTarget name="linkedlist" size="1.000000 0.719727" />
+    <ImageTarget name="array" size="1.000000 0.719727" />
+    <ImageTarget name="stack3" size="1.000000 0.719727" />
+  </Tracking>
+</QCARConfig>
