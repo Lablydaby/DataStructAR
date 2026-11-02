@@ -275,10 +275,12 @@ MonoBehaviour:
   - {fileID: 6979107840868165538, guid: 3cbc5992c9051b248a1fedd5ff6a1707, type: 3}
   spacePrefab: {fileID: 7641505555855108156, guid: 02bd8c72cc67a5641a2cbd810b7949e8, type: 3}
   startPosition: {fileID: 369286260}
-  elementSpacing: 0.15
+  elementSpacing: 2
+  spaceSpacing: 0.2
   animationDuration: 0.5
   spawnYOffset: 0.1
   maxNodes: 5
+  elementScale: {x: 0.5, y: 0.5, z: 0.5}
 --- !u!1 &119263390
 GameObject:
   m_ObjectHideFlags: 0

@@ -83,7 +83,7 @@ public class StackQuiz : MonoBehaviour
     {
         if (stack.Count == 0)
         {
-            feedbackText.text = "Stack is empty. Start building the correct order.";
+            //feedbackText.text = "Stack is empty. Start building the correct order.";
             return;
         }
 
@@ -140,7 +140,7 @@ public class StackQuiz : MonoBehaviour
     {
         if (stack.Count != correctOrder.Length)
         {
-            feedbackText.text = "Stack incomplete or incorrect. Build: {W → X → Y → Z}";
+            //feedbackText.text = "Stack incomplete or incorrect. Build: {W → X → Y → Z}";
             return;
         }
 
