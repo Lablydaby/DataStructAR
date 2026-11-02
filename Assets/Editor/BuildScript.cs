@@ -16,6 +16,7 @@ public static class BuildScript
         PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS, BundleId);
         PlayerSettings.iOS.cameraUsageDescription = CameraUsage; // iOS closes the app on camera access without this
         PlayerSettings.iOS.targetOSVersionString = "15.0";
+        PlayerSettings.preserveFramebufferAlpha = true; // "Render Over Native UI", required by Vuforia on iOS
 
         Build(BuildTarget.iOS, "Builds/iOS");
     }
