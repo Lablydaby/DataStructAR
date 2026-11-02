@@ -235,18 +235,45 @@ public static class ScreenshotTour
     // Unity.exe -batchmode -quit -projectPath <project> -executeMethod ScreenshotTour.DumpMainMenu
     public static void DumpMainMenu()
     {
-        EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
+        DumpScene("Assets/Scenes/MainMenu.unity", "mainmenu-hierarchy.txt");
+        DumpScene("Assets/Scenes/AR/Array.unity", "array-ar-hierarchy.txt");
+    }
+
+    private static void DumpScene(string scenePath, string fileName)
+    {
+        EditorSceneManager.OpenScene(scenePath);
         StringBuilder sb = new StringBuilder();
         foreach (GameObject root in EditorSceneManager.GetActiveScene().GetRootGameObjects())
             Dump(root.transform, 0, sb);
 
         Directory.CreateDirectory(OutputFolder);
-        File.WriteAllText(Path.Combine(OutputFolder, "mainmenu-hierarchy.txt"), sb.ToString());
+        File.WriteAllText(Path.Combine(OutputFolder, fileName), sb.ToString());
     }
 
     private static void Dump(Transform t, int depth, StringBuilder sb)
     {
         sb.Append(' ', depth * 2).Append(t.gameObject.activeSelf ? "+ " : "- ").Append(t.name);
+
+        // Layout and visuals, so UI can be adjusted from code without guessing
+        if (t is RectTransform rt)
+            sb.Append($"  rect(anchor {rt.anchorMin}-{rt.anchorMax} pos {rt.anchoredPosition} size {rt.sizeDelta} pivot {rt.pivot})");
+        foreach (Component c in t.GetComponents<Component>())
+        {
+            if (c == null) { sb.Append(" {Missing}"); continue; }
+            if (c is Transform || c is CanvasRenderer) continue;
+            sb.Append(" {").Append(c.GetType().Name);
+            if (c is Image img)
+                sb.Append($" sprite={(img.sprite != null ? img.sprite.name : "none")} color=#{ColorUtility.ToHtmlStringRGBA(img.color)} type={img.type}");
+            if (c is TMPro.TMP_Text tmp)
+                sb.Append($" font={(tmp.font != null ? tmp.font.name : "none")} size={tmp.fontSize} color=#{ColorUtility.ToHtmlStringRGBA(tmp.color)} align={tmp.alignment} style={tmp.fontStyle}");
+            if (c is LayoutGroup lg)
+                sb.Append($" padding={lg.padding} align={lg.childAlignment}");
+            if (c is HorizontalOrVerticalLayoutGroup hv)
+                sb.Append($" spacing={hv.spacing} ctrlW={hv.childControlWidth} ctrlH={hv.childControlHeight} expandW={hv.childForceExpandWidth} expandH={hv.childForceExpandHeight}");
+            if (c is ContentSizeFitter csf)
+                sb.Append($" h={csf.verticalFit} w={csf.horizontalFit}");
+            sb.Append('}');
+        }
 
         Button button = t.GetComponent<Button>();
         if (button != null)
