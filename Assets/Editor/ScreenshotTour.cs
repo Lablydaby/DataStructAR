@@ -29,7 +29,13 @@ public static class ScreenshotTour
     private static readonly string[] CategoryButtons = { "ArrayBtn", "LinkedListBtn", "StackBtn", "QueueBtn" };
     private static readonly string[] CategorySlugs = { "array", "linkedlist", "stack", "queue" };
 
-    private static readonly List<(float wait, Action action)> Steps = BuildSteps();
+    private const string ModeKey = "ScreenshotTour.Mode";
+    private const string FolderKey = "ScreenshotTour.Folder";
+    private const string QueueOverflowMode = "QueueOverflow";
+
+    private static List<(float wait, Action action)> steps;
+    private static List<(float wait, Action action)> Steps =>
+        steps ??= SessionState.GetString(ModeKey, "") == QueueOverflowMode ? BuildQueueOverflowSteps() : BuildSteps();
 
     // Play mode reloads scripts, so the tour's progress lives in SessionState and resumes here
     static ScreenshotTour()
@@ -47,25 +53,68 @@ public static class ScreenshotTour
     [MenuItem("Build/Capture Screenshot Tour")]
     public static void Run()
     {
-        Directory.CreateDirectory(OutputFolder);
         PlayerPrefs.SetInt("ReturnedFromAR", 0);
         PlayerPrefs.Save();
-
-        SessionState.SetInt(StepKey, 0);
-        SessionState.SetFloat(NextTimeKey, 0);
-        SessionState.SetInt(ShotKey, 1);
-
-        SetGameViewSize(PortraitWidth, PortraitHeight);
-        EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
-        EditorApplication.update -= Tick;
-        EditorApplication.update += Tick;
-        EditorApplication.EnterPlaymode();
+        Start("", OutputFolder, "Assets/Scenes/MainMenu.unity", PortraitWidth, PortraitHeight);
     }
 
     public static void RunAndQuit()
     {
         SessionState.SetBool(QuitKey, true);
         Run();
+    }
+
+    // Shows what happens when a sixth shape is enqueued into the full AR queue
+    [MenuItem("Build/Capture Queue Overflow")]
+    public static void RunQueueOverflow()
+    {
+        Start(QueueOverflowMode, OutputFolder + "/QueueOverflow", "Assets/Scenes/AR/queue.unity", PortraitHeight, PortraitWidth);
+    }
+
+    public static void RunQueueOverflowAndQuit()
+    {
+        SessionState.SetBool(QuitKey, true);
+        RunQueueOverflow();
+    }
+
+    private static void Start(string mode, string folder, string scenePath, int width, int height)
+    {
+        Directory.CreateDirectory(folder);
+        SessionState.SetString(ModeKey, mode);
+        SessionState.SetString(FolderKey, folder);
+        SessionState.SetInt(StepKey, 0);
+        SessionState.SetFloat(NextTimeKey, 0);
+        SessionState.SetInt(ShotKey, 1);
+        steps = null;
+
+        SetGameViewSize(width, height);
+        EditorSceneManager.OpenScene(scenePath);
+        EditorApplication.update -= Tick;
+        EditorApplication.update += Tick;
+        EditorApplication.EnterPlaymode();
+    }
+
+    private static List<(float, Action)> BuildQueueOverflowSteps()
+    {
+        List<(float, Action)> list = new List<(float, Action)>();
+        void Do(float wait, Action action) => list.Add((wait, action));
+        void Shot(float wait, string name) => Do(wait, () => Capture(name));
+
+        Do(0.1f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
+        Do(3f, ARDemo.PretendMarkerFound);
+        Shot(0.8f, "marker-found");
+        for (int i = 0; i < 5; i++)
+        {
+            int shape = i;
+            Do(i == 0 ? 0.5f : 1.3f, () => ARDemo.Queue.Enqueue(shape % ARDemo.Queue.shapePrefabs.Length));
+        }
+        Shot(1.5f, "queue-full");
+        Do(0.2f, () => ARDemo.Queue.Enqueue(0));
+        Shot(0.5f, "overflow-message");
+        Do(0.5f, () => ARDemo.Queue.Dequeue());
+        Shot(0.5f, "dequeue-shifting");
+        Shot(1f, "after-dequeue");
+        return list;
     }
 
     private static List<(float, Action)> BuildSteps()
@@ -187,7 +236,7 @@ public static class ScreenshotTour
     {
         int shot = SessionState.GetInt(ShotKey, 1);
         SessionState.SetInt(ShotKey, shot + 1);
-        string path = Path.Combine(OutputFolder, $"{shot:00}-{name}.png");
+        string path = Path.Combine(SessionState.GetString(FolderKey, OutputFolder), $"{shot:00}-{name}.png");
         ScreenCapture.CaptureScreenshot(path);
         Debug.Log("[ScreenshotTour] Captured " + path);
     }
