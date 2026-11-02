@@ -39,25 +39,14 @@ public class QueueManager : MonoBehaviour
         if (isBusy || prefabIndex < 0 || prefabIndex >= shapePrefabs.Length)
             return;
 
+        // A full queue refuses new items (overflow); items only leave through Dequeue
         if (rear >= queueCapacity)
         {
-            StartCoroutine(ForceEnqueueWithDequeue(prefabIndex));
+            ShowMessage("The queue is full. That's an overflow! Dequeue first to make room.");
+            return;
         }
-        else
-        {
-            StartCoroutine(EnqueueWithCooldown(prefabIndex));
-        }
-    }
 
-    IEnumerator ForceEnqueueWithDequeue(int prefabIndex)
-    {
-        isBusy = true;
-
-        yield return StartCoroutine(DequeueWithShift()); // Wait for Dequeue to complete
-
-        yield return StartCoroutine(EnqueueWithCooldown(prefabIndex)); // Now enqueue
-
-        isBusy = false;
+        StartCoroutine(EnqueueWithCooldown(prefabIndex));
     }
 
 
@@ -80,9 +69,12 @@ public class QueueManager : MonoBehaviour
 
     public void Dequeue()
     {
-        if (rear == 0 || isBusy)
+        if (isBusy)
+            return;
+
+        if (rear == 0)
         {
-            Debug.LogWarning("Queue is empty or busy.");
+            ShowMessage("The queue is empty. That's an underflow! Enqueue a shape first.");
             return;
         }
 
@@ -95,16 +87,27 @@ public class QueueManager : MonoBehaviour
 
         Destroy(elements[0]);
 
+        // Every remaining item steps forward one slot at the same time
         for (int i = 1; i < rear; i++)
         {
             elements[i - 1] = elements[i];
             Vector3 newPos = spaces[i - 1].transform.position;
-            yield return MoveToPosition(elements[i - 1].transform, newPos, animationDuration);
+            StartCoroutine(MoveToPosition(elements[i - 1].transform, newPos, animationDuration));
         }
+        yield return new WaitForSeconds(animationDuration);
 
         rear--;
         elements[rear] = null;
         isBusy = false;
+    }
+
+    private void ShowMessage(string message)
+    {
+        ARGuide guide = FindObjectOfType<ARGuide>();
+        if (guide != null)
+            guide.ShowMessage(message);
+        else
+            Debug.LogWarning(message);
     }
 
     IEnumerator MoveToPosition(Transform trans, Vector3 pos, float duration)

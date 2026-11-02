@@ -31,4 +31,4 @@ Enqueue, dequeue, peek and isEmpty all take **O(1)** time in a well-built queue.
 > - Every queue operation is O(1).
 
 # Try it in AR
-Point your camera at the **Queue** marker card. Tap **Enqueue** to add a shape at the rear and **Dequeue** to remove the one at the front.
+Point your camera at the **Queue** marker card. Tap **Enqueue** to add a shape at the rear and **Dequeue** to remove the one at the front. The queue holds five shapes: try enqueuing a sixth to see an overflow.

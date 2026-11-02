@@ -18,6 +18,7 @@ public class ARGuide : MonoBehaviour
     private TextMeshProUGUI searchTitle;
     private TextMeshProUGUI searchBody;
     private GameObject hintPanel;
+    private TextMeshProUGUI hintText;
     private bool hasFoundMarker;
     private Coroutine hideHint;
 
@@ -56,11 +57,21 @@ public class ARGuide : MonoBehaviour
         if (!hasFoundMarker)
         {
             hasFoundMarker = true;
-            hintPanel.SetActive(true);
-            if (hideHint != null)
-                StopCoroutine(hideHint);
-            hideHint = StartCoroutine(HideHintAfterDelay());
+            ShowMessage(controlsHint);
         }
+    }
+
+    // Shows a short message in the bottom hint panel, e.g. a queue overflow warning
+    public void ShowMessage(string message)
+    {
+        if (hintPanel == null)
+            return;
+
+        hintText.text = message;
+        hintPanel.SetActive(true);
+        if (hideHint != null)
+            StopCoroutine(hideHint);
+        hideHint = StartCoroutine(HideHintAfterDelay());
     }
 
     private void ShowSearching()
@@ -108,7 +119,7 @@ public class ARGuide : MonoBehaviour
         UiKit.Stretch(hint.rectTransform, new Vector2(0.2f, 0.04f), new Vector2(0.66f, 0.15f));
         hintPanel = hint.gameObject;
 
-        TextMeshProUGUI hintText = UiKit.Text(hint.transform, controlsHint, "Poppins-Regular SDF", 34, Color.white, TextAlignmentOptions.Center);
+        hintText = UiKit.Text(hint.transform, controlsHint, "Poppins-Regular SDF", 34, Color.white, TextAlignmentOptions.Center);
         UiKit.Stretch(hintText.rectTransform, new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.92f));
     }
 }
