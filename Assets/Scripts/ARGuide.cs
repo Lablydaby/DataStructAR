@@ -94,13 +94,13 @@ public class ARGuide : MonoBehaviour
         // Centered card while searching for the marker
         Image search = UiKit.Panel(canvas.transform, panelColor);
         search.name = "SearchPanel";
-        UiKit.Stretch(search.rectTransform, new Vector2(0.24f, 0.36f), new Vector2(0.76f, 0.64f));
+        UiKit.Stretch(search.rectTransform, new Vector2(0.16f, 0.34f), new Vector2(0.84f, 0.66f));
         searchPanel = search.gameObject;
 
-        searchTitle = UiKit.Text(search.transform, "", "Poppins-Bold SDF", 52, Color.white, TextAlignmentOptions.Center);
-        UiKit.Stretch(searchTitle.rectTransform, new Vector2(0.06f, 0.48f), new Vector2(0.94f, 0.92f));
-        searchBody = UiKit.Text(search.transform, "", "Poppins-Regular SDF", 34, new Color(1, 1, 1, 0.85f), TextAlignmentOptions.Center);
-        UiKit.Stretch(searchBody.rectTransform, new Vector2(0.06f, 0.1f), new Vector2(0.94f, 0.46f));
+        searchTitle = UiKit.Text(search.transform, "", "Poppins-Bold SDF", 46, Color.white, TextAlignmentOptions.Bottom);
+        UiKit.Stretch(searchTitle.rectTransform, new Vector2(0.05f, 0.55f), new Vector2(0.95f, 0.88f));
+        searchBody = UiKit.Text(search.transform, "", "Poppins-Regular SDF", 34, new Color(1, 1, 1, 0.85f), TextAlignmentOptions.Top);
+        UiKit.Stretch(searchBody.rectTransform, new Vector2(0.05f, 0.12f), new Vector2(0.95f, 0.45f));
 
         // Short controls hint at the bottom once the marker is found, clear of the corner buttons
         Image hint = UiKit.Panel(canvas.transform, panelColor);
