@@ -2264,6 +2264,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1323196695}
   m_CullTransparentMesh: 1
+--- !u!1 &1333766594
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1333766596}
+  - component: {fileID: 1333766595}
+  m_Layer: 0
+  m_Name: ARGuide
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1333766595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1333766594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f6d93e605244027ba0f49f0e36a6029, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  topicName: Array
+  controlsHint: Pick a shape, then tap Add to fill the next slot or Remove to empty
+    the last one. Tap Next when you're ready for the quiz.
+  hintDuration: 6
+--- !u!4 &1333766596
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1333766594}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1371395219
 GameObject:
   m_ObjectHideFlags: 0
@@ -3150,3 +3198,4 @@ SceneRoots:
   - {fileID: 1684069997}
   - {fileID: 4888121}
   - {fileID: 181295709}
+  - {fileID: 1333766596}
