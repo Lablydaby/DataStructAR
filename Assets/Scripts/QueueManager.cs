@@ -29,8 +29,8 @@ public class QueueManager : MonoBehaviour
     {
         for (int i = 0; i < queueCapacity; i++)
         {
-            Vector3 pos = startPosition.position + new Vector3(i * elementSpacing, 0, 0);
-            spaces[i] = Instantiate(spacePrefab, pos, Quaternion.identity, transform);
+            Vector3 pos = startPosition.position + startPosition.right * (i * elementSpacing);
+            spaces[i] = Instantiate(spacePrefab, pos, startPosition.rotation, transform);
         }
     }
 
@@ -67,7 +67,7 @@ public class QueueManager : MonoBehaviour
 
         Vector3 targetPos = spaces[rear].transform.position;
         Quaternion targetRot = spaces[rear].transform.rotation;
-        Vector3 spawnPos = targetPos + new Vector3(0, spawnYOffset, 0);
+        Vector3 spawnPos = targetPos + spaces[rear].transform.up * spawnYOffset;
 
         GameObject newElement = Instantiate(shapePrefabs[prefabIndex], spawnPos, targetRot, transform);
         elements[rear] = newElement;

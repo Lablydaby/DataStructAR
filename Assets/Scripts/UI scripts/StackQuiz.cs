@@ -22,13 +22,13 @@ public class StackQuiz : MonoBehaviour
 
     private void Start()
     {
-        feedbackText.text = "The stack is jumbled! Pop all elements and rebuild: {W → X → Y → Z}";
+        feedbackText.text = "The stack is jumbled! Pop all elements and rebuild it to read W → X → Y → Z from top to bottom.";
 
-        // Prefill with broken stack (e.g., X → Y → W)
+        // Prefill with broken stack, filling slots bottom-up so the visuals match push order
         string[] wrongInit = { "X", "Y", "W", "Z" };
         for (int i = 0; i < wrongInit.Length; i++)
         {
-            CreateBlockAtSlot(wrongInit[i], i);
+            CreateBlockAtSlot(wrongInit[i], stackSlots.Count - 1 - i);
             stack.Push(wrongInit[i]);
         }
 

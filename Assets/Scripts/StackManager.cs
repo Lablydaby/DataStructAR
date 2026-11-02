@@ -18,20 +18,29 @@ public class StackManager : MonoBehaviour
     public float popCooldown = 0.5f; // Cooldown duration for Pop
     private bool isPopOnCooldown = false;
 
+    // Final resting positions of each stacked object, local to the marker anchor
+    private readonly List<Vector3> targetLocalPositions = new List<Vector3>();
+
+    // Objects live under the image target so they follow it and hide when tracking is lost
+    private Transform Anchor => startPos.parent != null ? startPos.parent : parent;
+
 
     void Start()
     {
         // Spawn the initial stack
-        StartCoroutine(SpawnStack(0));
-        StartCoroutine(SpawnStack(1));
-        StartCoroutine(SpawnStack(2));
+        StartCoroutine(SpawnInitialStack());
     }
 
-    IEnumerator SpawnStack(int index)
+    IEnumerator SpawnInitialStack()
     {
         yield return new WaitForSeconds(0.5f);
 
-        Push(index);
+        for (int i = 0; i < 3; i++)
+        {
+            // Wait out the push cooldown so each initial push goes through
+            yield return new WaitWhile(() => isPushOnCooldown);
+            Push(i);
+        }
     }
 
     public void Push(int selectedIndex)
@@ -60,15 +69,18 @@ public class StackManager : MonoBehaviour
     {
         isPushOnCooldown = true;
 
-        Vector3 spawnPosition = GetNextSpawnPosition();
-        Vector3 initialPosition = spawnPosition + new Vector3(0, spawnHeightOffset, 0); // Spawn above the target position
-        GameObject newObject = Instantiate(stackPrefabs[selectedIndex], initialPosition, Quaternion.identity,parent);
-        if (stackObjects.Count <= 5)
-        {
-            tempObject = newObject.transform;
-        }
+        GameObject newObject = Instantiate(stackPrefabs[selectedIndex], startPos.position, startPos.rotation, parent);
+        newObject.transform.SetParent(Anchor, true); // Keep world size, but follow the marker
+
+        Vector3 spawnPosition = GetNextSpawnPosition(newObject.transform);
+        newObject.transform.position = spawnPosition + startPos.up * spawnHeightOffset; // Spawn above the target position
+
+        tempObject = newObject.transform;
         stackObjects.Add(newObject);
-        StartCoroutine(AnimateMove(newObject, spawnPosition));
+
+        Vector3 targetLocal = Anchor.InverseTransformPoint(spawnPosition);
+        targetLocalPositions.Add(targetLocal);
+        StartCoroutine(AnimateMove(newObject, targetLocal));
 
         yield return new WaitForSeconds(pushCooldown);
         isPushOnCooldown = false;
@@ -95,9 +107,10 @@ public class StackManager : MonoBehaviour
 
         GameObject topObject = stackObjects[stackObjects.Count - 1];
         stackObjects.RemoveAt(stackObjects.Count - 1);
+        targetLocalPositions.RemoveAt(targetLocalPositions.Count - 1);
 
-        Vector3 targetPosition = topObject.transform.position + new Vector3(0, spawnHeightOffset, 0); // Move up before destroying
-        StartCoroutine(AnimateMoveAndDestroy(topObject, targetPosition));
+        Vector3 targetPosition = topObject.transform.position + startPos.up * spawnHeightOffset; // Move up before destroying
+        StartCoroutine(AnimateMoveAndDestroy(topObject, Anchor.InverseTransformPoint(targetPosition)));
 
         if (stackObjects.Count <= 0)
         {
@@ -114,43 +127,39 @@ public class StackManager : MonoBehaviour
     }
 
 
-    private Vector3 GetNextSpawnPosition()
+    private Vector3 GetNextSpawnPosition(Transform newObject)
     {
+        // World-space heights, so scaled parents don't skew the spacing
+        float newHalfHeight = newObject.lossyScale.y / 2;
 
         if (stackObjects.Count == 0)
         {
-
             // Return the initial position for the first object
-            return startPos.position + new Vector3(0, stackPrefabs[0].transform.localScale.y / 2, 0);
-
+            return startPos.position + startPos.up * newHalfHeight;
         }
         else
         {
-            //GameObject topObject = stackObjects[stackObjects.Count - 1];
-            //float objectHeight = topObject.transform.localScale.y;
-            //return topObject.transform.position + new Vector3(0, objectHeight + stackSpacing, 0);
-
-
-            GameObject topObject = tempObject.gameObject;
-            float objectHeight = topObject.transform.localScale.y;
-            //tempObject = topObject.transform;
-            return topObject.transform.position + new Vector3(0, objectHeight + stackSpacing, 0);
+            // Stack on the top object's resting spot, even if it is still animating
+            Vector3 topPosition = Anchor.TransformPoint(targetLocalPositions[targetLocalPositions.Count - 1]);
+            float topHalfHeight = tempObject.lossyScale.y / 2;
+            return topPosition + startPos.up * (topHalfHeight + stackSpacing + newHalfHeight);
         }
     }
 
-    private IEnumerator AnimateMove(GameObject obj, Vector3 targetPosition)
+    // Animates in the anchor's local space so the motion stays attached to the marker
+    private IEnumerator AnimateMove(GameObject obj, Vector3 targetLocalPosition)
     {
-        Vector3 startPosition = obj.transform.position;
+        Vector3 startPosition = obj.transform.localPosition;
         float elapsedTime = 0;
 
         while (elapsedTime < animationDuration)
         {
-            obj.transform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime / animationDuration);
+            obj.transform.localPosition = Vector3.Lerp(startPosition, targetLocalPosition, elapsedTime / animationDuration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        obj.transform.position = targetPosition;
+        obj.transform.localPosition = targetLocalPosition;
     }
 
     private IEnumerator AnimateMoveAndDestroy(GameObject obj, Vector3 targetPosition)

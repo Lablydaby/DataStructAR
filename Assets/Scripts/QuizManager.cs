@@ -172,7 +172,7 @@ public class QuizManager : MonoBehaviour
 
             // ✅ Update question number
             if (questionNumberText != null)
-                questionNumberText.text = "0" + (currentQuestionIndex + 1).ToString();
+                questionNumberText.text = (currentQuestionIndex + 1).ToString("00");
 
             Debug.Log("Displaying question: " + question.question);
 
@@ -330,7 +330,7 @@ public class QuizManager : MonoBehaviour
                 SceneManager.LoadScene("Stack");
                 break;
             case "Queue":
-                SceneManager.LoadScene("Queue");
+                SceneManager.LoadScene("queue"); // Must match the scene file name (queue.unity)
                 break;
             default:
                 Debug.LogWarning("Invalid or empty category selected for AR.");

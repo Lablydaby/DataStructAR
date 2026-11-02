@@ -78,7 +78,10 @@ public class LinkedListQuiz : MonoBehaviour
             }
         }
 
-        // All matched
+        // All matched (the check runs on both drop and end-drag, so only schedule once)
+        if (IsInvoking("Complete"))
+            return;
+
         feedbackText.text = successText;
 
         Invoke("Complete", 2f); // Call Complete after 2 seconds    

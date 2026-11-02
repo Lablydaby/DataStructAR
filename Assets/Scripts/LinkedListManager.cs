@@ -58,7 +58,7 @@ public class LinkedListManager : MonoBehaviour
         }
 
         // Instantiate the new node object
-        GameObject newNodeObj = Instantiate(nodePrefabs[prefabIndex], GetNextNodePosition(), Quaternion.identity, nodeListParent.transform);
+        GameObject newNodeObj = Instantiate(nodePrefabs[prefabIndex], GetNextNodePosition(), startPosition.rotation, nodeListParent.transform);
 
         // Get the Node component from the new object
         Node newNode = newNodeObj.GetComponent<Node>();
@@ -105,19 +105,19 @@ public class LinkedListManager : MonoBehaviour
         {
             Destroy(head.gameObject);
             head = null;
-            nodeCount--; // Decrement the node count
-            return;
         }
-
-        Node current = head;
-        while (current.next.next != null)
+        else
         {
-            current = current.next;
+            Node current = head;
+            while (current.next.next != null)
+            {
+                current = current.next;
+            }
+
+            Destroy(current.next.gameObject);
+            current.next = null;
         }
 
-        Destroy(current.next.gameObject);
-        current.next = null;
-        // Inside both if blocks of RemoveLastNode
         nodeCount--;
         UpdateNullNodePosition();
         UpdateHeadMarker();
@@ -133,8 +133,8 @@ public class LinkedListManager : MonoBehaviour
             Destroy(currentNullNode);
         }
 
-        Vector3 position = GetNextNodePosition() + nullOffset;
-        currentNullNode = Instantiate(nullNodePrefab, position, Quaternion.identity, nodeListParent.transform);
+        Vector3 position = GetNextNodePosition() + startPosition.rotation * nullOffset;
+        currentNullNode = Instantiate(nullNodePrefab, position, startPosition.rotation, nodeListParent.transform);
     }
 
 
@@ -153,11 +153,11 @@ public class LinkedListManager : MonoBehaviour
 
         if (currentHeadMarker == null)
         {
-            currentHeadMarker = Instantiate(headMarkerPrefab, head.transform.position + headOffset, Quaternion.identity, nodeListParent.transform);
+            currentHeadMarker = Instantiate(headMarkerPrefab, head.transform.position + startPosition.rotation * headOffset, startPosition.rotation, nodeListParent.transform);
         }
         else
         {
-            currentHeadMarker.transform.position = head.transform.position + headOffset;
+            currentHeadMarker.transform.position = head.transform.position + startPosition.rotation * headOffset;
         }
     }
 
@@ -177,8 +177,8 @@ public class LinkedListManager : MonoBehaviour
                 current = current.next;
             }
 
-            // Use the position of the last node and offset by nodeSpacing on the X-axis
-            return current.transform.position + new Vector3(nodeSpacing, 0, 0);
+            // Use the position of the last node and offset by nodeSpacing along the marker's X-axis
+            return current.transform.position + startPosition.right * nodeSpacing;
         }
     }
 }

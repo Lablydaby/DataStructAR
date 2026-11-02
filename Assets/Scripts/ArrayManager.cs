@@ -30,7 +30,7 @@ public class ArrayManager : MonoBehaviour
         for (int i = 0; i < maxNodes; i++)
         {
             Vector3 pos = GetSpacePositionAtIndex(i);
-            GameObject space = Instantiate(spacePrefab, pos, Quaternion.identity, transform);
+            GameObject space = Instantiate(spacePrefab, pos, startPosition.rotation, transform);
             spaces.Add(space);
         }
     }
@@ -50,7 +50,7 @@ public class ArrayManager : MonoBehaviour
         GameObject targetSpace = spaces[currentIndex];
         Vector3 targetPos = targetSpace.transform.position;
 
-        GameObject element = Instantiate(shapePrefabs[prefabIndex], targetPos + Vector3.up * spawnYOffset, Quaternion.identity);
+        GameObject element = Instantiate(shapePrefabs[prefabIndex], targetPos + targetSpace.transform.up * spawnYOffset, targetSpace.transform.rotation);
         element.transform.SetParent(targetSpace.transform, true);
 
         // Apply custom scale
@@ -82,7 +82,7 @@ public class ArrayManager : MonoBehaviour
 
     Vector3 GetSpacePositionAtIndex(int index)
     {
-        return startPosition.position + new Vector3(index * spaceSpacing, 0f, 0f);
+        return startPosition.position + startPosition.right * (index * spaceSpacing);
     }
 
     IEnumerator MoveToPosition(Transform target, Vector3 end, float timeToMove)
