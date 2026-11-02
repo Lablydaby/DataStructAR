@@ -1,0 +1,27 @@
+An **array** stores a fixed number of elements of the same type, **side by side in memory**. Each element has a numbered position called its **index**, and indexes start at **0**.
+
+> Think of a row of numbered lockers: you can open locker 3 straight away, without checking lockers 0, 1 and 2 first.
+
+# Types of arrays
+1. **One-dimensional**: a single row of elements.
+[image:array_1d]
+2. **Multi-dimensional**: an array of arrays, such as a grid of rows and columns.
+[image:array_2d]
+
+# Basic operations
+- **Access**: read the element at an index. Takes **O(1)**, because its memory address can be calculated directly.
+- **Update**: change the element at an index. Also **O(1)**.
+- **Insert**: add an element at a position. Every element after it must shift one place right, so it takes **O(n)**.
+- **Delete**: remove an element. The elements after it shift left to close the gap, so it takes **O(n)**.
+- **Traverse**: visit every element, for example to search for a value. Takes **O(n)**.
+
+# When to use an array
+Arrays are a good fit when you read data often and know how many items you need in advance. They are slower when you insert or delete in the middle, because elements have to move.
+
+# Key takeaways
+> - Indexes start at 0.
+> - Reading or changing an element by its index is O(1).
+> - Inserting or deleting in the middle is O(n), because elements shift.
+
+# Try it in AR
+Point your camera at the **Array** marker card. Pick a shape, then tap **Add** to fill the next empty slot or **Remove** to empty the last one.

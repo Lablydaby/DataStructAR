@@ -1,0 +1,34 @@
+A **linked list** is a chain of **nodes**. Each node holds a value and a **pointer** (a link) to the next node. Unlike an array, the nodes do not need to sit next to each other in memory.
+
+> Think of a scavenger hunt: each clue tells you where to find the next one.
+
+# Parts of a linked list
+- **Head**: the first node. Every trip through the list starts here.
+- **Node**: one value plus a pointer to the next node.
+- **Null**: the last node points to null, which marks the end of the list.
+
+# Types of linked lists
+1. **Singly linked**: each node points to the next node only.
+2. **Doubly linked**: each node points to both the next and the previous node, so you can move in both directions.
+3. **Circular**: the last node points back to the first node, forming a loop.
+
+# Key operations
+- **Insert at the head**: point the new node at the old head. Takes **O(1)**.
+- **Insert or delete after a node you already have**: only the pointers change and nothing shifts. Takes **O(1)**.
+- **Search, or reach the node at a position**: you have to follow the links from the head. Takes **O(n)**.
+
+# Linked list vs. array
+- A linked list can grow and shrink at any time; it has no fixed size.
+- Inserting or deleting does not shift other elements.
+- But there is no direct access by index, and every node needs extra memory for its pointer.
+
+# Where linked lists are used
+They are the building blocks of stacks, queues and some hash tables, and memory managers use them to keep track of free blocks.
+
+# Key takeaways
+> - Each node stores a value and a pointer to the next node.
+> - Inserting at the head is O(1); finding a node is O(n).
+> - The last node points to null.
+
+# Try it in AR
+Point your camera at the **Linked List** marker card. Tap **Add** to attach a new node at the end and **Remove** to delete the last one. Watch the Head and Null labels move.

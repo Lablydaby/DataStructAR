@@ -22,6 +22,10 @@ public static class ScreenshotTour
     private const string ShotKey = "ScreenshotTour.Shot";
     private const string QuitKey = "ScreenshotTour.Quit";
 
+    // A common modern Android phone shape (19:9)
+    private const int PortraitWidth = 720;
+    private const int PortraitHeight = 1520;
+
     private static readonly string[] CategoryButtons = { "ArrayBtn", "LinkedListBtn", "StackBtn", "QueueBtn" };
     private static readonly string[] CategorySlugs = { "array", "linkedlist", "stack", "queue" };
 
@@ -51,7 +55,7 @@ public static class ScreenshotTour
         SessionState.SetFloat(NextTimeKey, 0);
         SessionState.SetInt(ShotKey, 1);
 
-        SetGameViewSize(720, 1280);
+        SetGameViewSize(PortraitWidth, PortraitHeight);
         EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity");
         EditorApplication.update -= Tick;
         EditorApplication.update += Tick;
@@ -71,7 +75,8 @@ public static class ScreenshotTour
         void Shot(float wait, string name) => Do(wait, () => Capture(name));
         void Click(float wait, string path) => Do(wait, () => ClickButton(path));
 
-        Shot(1f, "splash");
+        Do(0.1f, () => SetGameViewSize(PortraitWidth, PortraitHeight));
+        Shot(0.6f, "splash");
         Shot(2.5f, "intro");
         Click(0.5f, "Splash2/BG/NextButton");
         Shot(1f, "menu");
@@ -81,23 +86,31 @@ public static class ScreenshotTour
             string slug = CategorySlugs[i];
 
             Click(i == 0 ? 0.5f : 3f, "Options/BG/" + CategoryButtons[i]);
+            if (i == 0)
+                Shot(0.5f, "menu-selected");
             Click(0.3f, "Options/BG/ShowInfo");
             Shot(1f, slug + "-info");
+            Do(0.2f, () => ScrollLesson(0.6f));
+            Shot(0.5f, slug + "-info-middle");
+            Do(0.2f, () => ScrollLesson(0f));
+            Shot(0.5f, slug + "-info-end");
 
-            Do(0.3f, () => SetGameViewSize(1280, 720));
+            Do(0.3f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
             Click(0.5f, "Info/BG/StartARButton");
             Shot(5f, slug + "-ar");
 
             // Same as the AR scene's back-to-quiz button
             Do(0.5f, () => ReturnToMenu(1));
             Shot(3f, slug + "-quiz");
-            for (int q = 0; q < 10; q++)
-                Click(0.2f, "Quiz/BG/Question1");
-            Shot(0.5f, slug + "-quiz-finished");
+            Click(0.2f, "Quiz/BG/Question1");
+            Shot(0.4f, slug + "-quiz-feedback");
+            for (int q = 1; q < 5; q++)
+                Click(1.2f, "Quiz/BG/Question1");
+            Shot(1.5f, slug + "-quiz-finished");
             Click(0.3f, "Quiz/BG/Done");
             Shot(1f, slug + "-result");
 
-            Do(0.3f, () => SetGameViewSize(1280, 720));
+            Do(0.3f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
             Click(0.3f, "Result/BG/Next");
             Shot(1.5f, slug + "-practice");
 
@@ -157,8 +170,17 @@ public static class ScreenshotTour
     {
         PlayerPrefs.SetInt("ReturnedFromAR", returnedFromAR);
         PlayerPrefs.Save();
-        SetGameViewSize(720, 1280);
+        SetGameViewSize(PortraitWidth, PortraitHeight);
         SceneManager.LoadScene("MainMenu");
+    }
+
+    private static void ScrollLesson(float normalizedPosition)
+    {
+        foreach (ScrollRect scroll in Object.FindObjectsOfType<ScrollRect>())
+        {
+            if (scroll.name == "Scroll View")
+                scroll.verticalNormalizedPosition = normalizedPosition;
+        }
     }
 
     private static void Capture(string name)

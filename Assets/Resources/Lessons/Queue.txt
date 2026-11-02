@@ -1,0 +1,34 @@
+A **queue** adds items at the **rear** and removes them from the **front**. It follows **FIFO: First In, First Out**. The first item you add is the first one you remove.
+
+> Think of a line at a ticket counter: people join at the back, and the person at the front is served first.
+
+# Key operations
+- **Enqueue**: add an item at the rear.
+- **Dequeue**: remove the item at the front and return it. The next item becomes the new front.
+- **Peek** (or Front): look at the front item without removing it.
+- **IsEmpty**: check whether the queue has no items, so you never dequeue or peek an empty queue.
+
+# Overflow and underflow
+- **Overflow**: enqueuing into a queue that is already full.
+- **Underflow**: dequeuing from a queue that is empty.
+
+# Types of queues
+- **Simple queue**: items join at the rear and leave from the front.
+- **Circular queue**: the last position connects back to the first, so space freed at the front can be reused.
+- **Priority queue**: items leave in order of priority instead of arrival order.
+
+# Where queues are used
+- Print jobs waiting for a printer.
+- Keyboard input waiting to be processed.
+- Tasks waiting for the CPU.
+
+# Complexity
+Enqueue, dequeue, peek and isEmpty all take **O(1)** time in a well-built queue. A queue holding n items uses **O(n)** space.
+
+# Key takeaways
+> - First in, first out: the oldest item leaves first.
+> - Enqueue at the rear; dequeue from the front.
+> - Every queue operation is O(1).
+
+# Try it in AR
+Point your camera at the **Queue** marker card. Tap **Enqueue** to add a shape at the rear and **Dequeue** to remove the one at the front.

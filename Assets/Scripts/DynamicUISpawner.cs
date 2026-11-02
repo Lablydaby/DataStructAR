@@ -32,6 +32,11 @@ public class DynamicUISpawner : MonoBehaviour
 				group.triggerButton.onClick.AddListener(() => SpawnGroup(groupName));
 			}
 		}
+
+		// Lessons should always open at the top
+		ScrollRect scrollRect = content.GetComponentInParent<ScrollRect>(true);
+		if (scrollRect != null && scrollRect.GetComponent<ScrollToTopOnEnable>() == null)
+			scrollRect.gameObject.AddComponent<ScrollToTopOnEnable>();
 	}
 
 	public void SpawnGroup(string groupName)
@@ -43,6 +48,14 @@ public class DynamicUISpawner : MonoBehaviour
 		}
 
 		heading.text = groupName;
+
+		// Prefer the text lesson in Resources/Lessons; the image prefabs are the fallback
+		TextAsset lesson = LessonBuilder.Load(groupName);
+		if (lesson != null)
+		{
+			LessonBuilder.Build(content, lesson.text);
+			return;
+		}
 
 		// Find the correct group and spawn its prefabs
 		UIPrefabGroup selectedGroup = prefabGroups.Find(g => g.groupName == groupName);

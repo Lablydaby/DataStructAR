@@ -17,12 +17,15 @@ public class StackQuiz : MonoBehaviour
     public RectTransform stackParent;                   // Parent container for instantiated elements
     public GameObject StackPanel;
 
+    // Also the banner's open heading (set on the Heading's HeaderManager in the scene)
+    public const string StackInstructions = "Pop every block, then push them back so the stack reads W, X, Y, Z from top to bottom.";
+
     private Stack<string> stack = new Stack<string>();
     private readonly string[] correctOrder = { "W", "X", "Y", "Z" };
 
     private void Start()
     {
-        feedbackText.text = "The stack is jumbled! Pop all elements and rebuild it to read W → X → Y → Z from top to bottom.";
+        feedbackText.text = StackInstructions;
 
         // Prefill with broken stack, filling slots bottom-up so the visuals match push order
         string[] wrongInit = { "X", "Y", "W", "Z" };

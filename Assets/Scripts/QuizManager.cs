@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
@@ -59,6 +61,10 @@ public class QuizManager : MonoBehaviour
     private int currentQuestionIndex = 0;
     private int score = 0;
     private bool isReturningFromAR = false;
+    private bool isRevealingAnswer = false;
+
+    [Header("Answer Feedback")]
+    public float answerRevealSeconds = 1f;
 
 
     [Header("Completion Panels Per Category")]
@@ -85,6 +91,8 @@ public class QuizManager : MonoBehaviour
         queueButton.onClick.AddListener(() => SelectCategory("Queue"));
 
         startARButton.onClick.AddListener(LoadARScene);
+        HighlightCategory("");
+        SetUpRetryButton();
 
         if (onQuizCompleteObject != null)
             onQuizCompleteObject.SetActive(false);
@@ -129,8 +137,44 @@ public class QuizManager : MonoBehaviour
         Debug.Log("Category selected: " + categoryName);
         PlayerPrefs.SetString("SelectedCategory", categoryName);
         PlayerPrefs.Save();
+        HighlightCategory(categoryName);
 
         // Do not show quiz panel or start quiz here.
+    }
+
+    // Tints the chosen topic so students can see what Explore will open
+    private void HighlightCategory(string categoryName)
+    {
+        SetHighlight(arrayButton, categoryName == "Array");
+        SetHighlight(linkedListButton, categoryName == "Linked List");
+        SetHighlight(stackButton, categoryName == "Stack");
+        SetHighlight(queueButton, categoryName == "Queue");
+    }
+
+    private static void SetHighlight(Button button, bool selected)
+    {
+        if (button != null && button.image != null)
+            button.image.color = selected ? UiKit.Selected : Color.white;
+    }
+
+    // The result screen's retry icon retakes the quiz instead of returning to the topic list
+    private void SetUpRetryButton()
+    {
+        Transform reload = resultPanel != null ? resultPanel.transform.Find("BG/Reload") : null;
+        if (reload == null)
+            return;
+
+        Button retry = reload.GetComponent<Button>();
+        for (int i = 0; i < retry.onClick.GetPersistentEventCount(); i++)
+            retry.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
+        retry.onClick.AddListener(RetryQuiz);
+    }
+
+    public void RetryQuiz()
+    {
+        resultPanel.SetActive(false);
+        quizPanel.SetActive(true);
+        StartQuiz(PlayerPrefs.GetString("SelectedCategory", ""));
     }
 
     public void StartQuiz(string categoryName)
@@ -144,9 +188,17 @@ public class QuizManager : MonoBehaviour
             currentQuestions = new List<QuizQuestion>(selectedCategory.questions);
             currentQuestionIndex = 0;
             score = 0;
+            isRevealingAnswer = false;
 
             if (onQuizCompleteObject != null)
                 onQuizCompleteObject.SetActive(false);
+
+            // Undo the dimming from a previous attempt
+            for (int i = 0; i < optionButtons.Length; i++)
+            {
+                optionButtons[i].interactable = true;
+                ResetOptionStyle(i);
+            }
 
             if (quizPanel != null && isReturningFromAR)
             {
@@ -170,9 +222,9 @@ public class QuizManager : MonoBehaviour
             QuizQuestion question = currentQuestions[currentQuestionIndex];
             questionText.text = question.question;
 
-            // ✅ Update question number
+            // ✅ Update question number, with the total so students know how far along they are
             if (questionNumberText != null)
-                questionNumberText.text = (currentQuestionIndex + 1).ToString("00");
+                questionNumberText.text = $"{currentQuestionIndex + 1}/{currentQuestions.Count}";
 
             Debug.Log("Displaying question: " + question.question);
 
@@ -204,6 +256,8 @@ public class QuizManager : MonoBehaviour
             Debug.LogWarning("SubmitAnswer() called after quiz is already finished.");
             return; // Prevent crash
         }
+        if (isRevealingAnswer)
+            return; // Ignore taps while the previous answer is shown
 
         Debug.Log("Answer submitted. Selected index: " + selectedIndex);
 
@@ -217,8 +271,56 @@ public class QuizManager : MonoBehaviour
             Debug.Log("Incorrect answer.");
         }
 
+        StartCoroutine(RevealAnswerThenContinue(selectedIndex));
+    }
+
+    // Marks the right answer green and a wrong pick red for a moment before the next question
+    private IEnumerator RevealAnswerThenContinue(int selectedIndex)
+    {
+        isRevealingAnswer = true;
+        int correctIndex = currentQuestions[currentQuestionIndex].correctAnswerIndex;
+
+        for (int i = 0; i < optionButtons.Length; i++)
+        {
+            Image letterBadge = GetLetterBadge(i);
+            if (i == correctIndex && letterBadge != null)
+                letterBadge.color = UiKit.Correct;
+            else if (i == selectedIndex && letterBadge != null)
+                letterBadge.color = UiKit.Wrong;
+            else
+                SetOptionAlpha(i, 0.45f);
+        }
+
+        yield return new WaitForSeconds(answerRevealSeconds);
+
+        for (int i = 0; i < optionButtons.Length; i++)
+            ResetOptionStyle(i);
+
+        isRevealingAnswer = false;
         currentQuestionIndex++;
         DisplayQuestion();
+    }
+
+    // The white rounded square behind each option's letter
+    private Image GetLetterBadge(int optionIndex)
+    {
+        Transform badge = optionButtons[optionIndex].transform.Find("ABG");
+        return badge != null ? badge.GetComponent<Image>() : null;
+    }
+
+    private void SetOptionAlpha(int optionIndex, float alpha)
+    {
+        CanvasGroup group = optionButtons[optionIndex].GetComponent<CanvasGroup>();
+        if (group != null)
+            group.alpha = alpha;
+    }
+
+    private void ResetOptionStyle(int optionIndex)
+    {
+        Image letterBadge = GetLetterBadge(optionIndex);
+        if (letterBadge != null)
+            letterBadge.color = Color.white;
+        SetOptionAlpha(optionIndex, 1f);
     }
 
 

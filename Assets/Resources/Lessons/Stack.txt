@@ -1,0 +1,29 @@
+A **stack** is a collection where you add and remove items at **one end only**, called the **top**. It follows **LIFO: Last In, First Out**. The last item you add is the first one you remove.
+
+> Think of a stack of plates: you put new plates on top, and you take plates from the top.
+
+# Key operations
+- **Push**: add an item to the top.
+- **Pop**: remove the top item and return it. The item below becomes the new top.
+- **Peek** (or Top): look at the top item without removing it.
+- **IsEmpty**: check whether the stack has no items, so you never pop or peek an empty stack.
+
+# Overflow and underflow
+- **Stack overflow**: pushing onto a stack that is already full.
+- **Stack underflow**: popping from a stack that is empty.
+
+# Where stacks are used
+- **Undo** in apps: the most recent change is undone first.
+- **Function calls**: a program returns from the most recent call first.
+- The **Back** button in a web browser.
+
+# Complexity
+Push, pop, peek and isEmpty all take **O(1)** time. A stack holding n items uses **O(n)** space.
+
+# Key takeaways
+> - Last in, first out: you only ever touch the top.
+> - Push adds to the top; pop removes from the top.
+> - Every stack operation is O(1).
+
+# Try it in AR
+Point your camera at the **Stack** marker card. Pick a shape and tap **Push** to drop it on top, then tap **Pop** to lift the top block off.
