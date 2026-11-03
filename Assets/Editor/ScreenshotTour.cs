@@ -105,36 +105,57 @@ public static class ScreenshotTour
 
         Do(0.1f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
 
-        // Each scene with a few items added, viewed head-on with its stage card drawn underneath
-        (string scene, string slug, Action<int> add)[] scenes =
-        {
-            ("Array", "array", i => Object.FindObjectOfType<ArrayManager>().AddElement(i % Object.FindObjectOfType<ArrayManager>().shapePrefabs.Length)),
-            ("LinkedList", "linkedlist", i => Object.FindObjectOfType<LinkedListManager>().AddNode(i % Object.FindObjectOfType<LinkedListManager>().nodePrefabs.Length)),
-            ("Stack", "stack", i => { if (i >= 3) Object.FindObjectOfType<StackManager>().Push(i % 3); }), // Starts with three blocks of its own
-            ("queue", "queue", i => Object.FindObjectOfType<QueueManager>().Enqueue(i % Object.FindObjectOfType<QueueManager>().shapePrefabs.Length)),
-        };
-        foreach ((string scene, string slug, Action<int> add) in scenes)
+        // Each scene viewed head-on with its stage card drawn underneath, walking through its operations
+        ArrayManager Arr() => Object.FindObjectOfType<ArrayManager>();
+        LinkedListManager List() => Object.FindObjectOfType<LinkedListManager>();
+        StackManager Stk() => Object.FindObjectOfType<StackManager>();
+        QueueManager Que() => Object.FindObjectOfType<QueueManager>();
+
+        void Scene(string scene, string slug)
         {
             Do(0.5f, () => SceneManager.LoadScene(scene));
             Do(2.5f, ARDemo.PretendUprightMarkerFound);
             if (slug == "array")
                 Shot(0.5f, "array-howto");
             Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
-            // Fill to the 5-item maximum, so the layout is checked at its largest
-            for (int i = 0; i < 5; i++)
-            {
-                int shape = i;
-                Do(1.3f, () => add(shape));
-            }
-            Do(2.5f, ARDemo.FrameUpright);
-            Do(0.1f, () => ARDemo.LogContentBounds(scene));
-            Shot(0.3f, slug + "-upright");
-            if (slug == "stack")
-            {
-                Do(0.3f, () => Object.FindObjectOfType<StackManager>().Push(0));
-                Shot(0.4f, "stack-overflow-toast");
-            }
         }
+        void Frame() => Do(0.1f, ARDemo.FrameUpright);
+
+        Scene("Array", "array");
+        for (int i = 0; i < 3; i++) { int s = i; Do(1.0f, () => Arr().AddElement(s % 3)); }
+        Frame();
+        Shot(1.0f, "array-added");
+        Do(0.2f, () => { Object.FindObjectOfType<ARGuide>().SetPosition(1); Arr().InsertAt(1, 1); });
+        Shot(1.6f, "array-insert-at-1");
+        Do(0.3f, () => Arr().DeleteAt(0));
+        Shot(1.6f, "array-delete-at-0");
+
+        Scene("LinkedList", "linkedlist");
+        for (int i = 0; i < 3; i++) { int s = i; Do(0.6f, () => List().AddNode(s % 3)); }
+        Frame();
+        Shot(0.8f, "linkedlist-added");
+        Do(0.2f, () => List().InsertAtHead(1));
+        Frame();
+        Shot(0.8f, "linkedlist-insert-head");
+        Do(0.2f, () => List().DeleteAt(2));
+        Shot(0.8f, "linkedlist-delete-node-3");
+
+        Scene("Stack", "stack");
+        Do(2.5f, () => Stk().Push(0));
+        Frame();
+        Shot(1.2f, "stack-pushed");
+        Do(0.2f, () => Stk().Pop());
+        Shot(1.0f, "stack-popped");
+
+        Scene("queue", "queue");
+        for (int i = 0; i < 5; i++) { int s = i; Do(1.3f, () => Que().Enqueue(s % 3)); }
+        Frame();
+        Shot(1.3f, "queue-full");
+        Do(0.2f, () => Que().Dequeue());
+        Do(0.8f, () => Que().Dequeue());
+        Shot(0.8f, "queue-dequeued-twice");
+        Do(0.2f, () => Que().Enqueue(1));
+        Shot(1.4f, "queue-wrapped");
         return list;
     }
 

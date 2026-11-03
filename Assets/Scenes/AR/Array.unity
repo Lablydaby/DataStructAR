@@ -2294,8 +2294,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topicName: Array
-  controlsHint: Pick a shape, then tap Add to fill the next slot or Remove to empty
-    the last one. Tap Go to Quiz when you're ready.
+  controlsHint: 'Pick a shape, then tap Add to fill the next slot or Remove to empty the last one. Pick an index to Insert at or Delete at, and watch the elements shift. Tap Go to Quiz when you''re ready.'
   hintDuration: 6
 --- !u!4 &1333766596
 Transform:

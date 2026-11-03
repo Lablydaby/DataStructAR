@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class StackManager : MonoBehaviour
 {
@@ -19,6 +20,12 @@ public class StackManager : MonoBehaviour
     private bool isPushOnCooldown = false;
     public float popCooldown = 0.5f; // Cooldown duration for Pop
     private bool isPopOnCooldown = false;
+
+    // Each block's value and the TOP marker, shown beside the blocks
+    private readonly List<int> values = new List<int>();
+    private readonly List<TextMeshPro> valueLabels = new List<TextMeshPro>();
+    private TextMeshPro topLabel;
+    private const float LabelSide = 0.09f;
 
     // Objects still sliding into place; the rest sit at their resting spot
     private readonly HashSet<GameObject> moving = new HashSet<GameObject>();
@@ -123,6 +130,13 @@ public class StackManager : MonoBehaviour
 
         tempObject = newObject.transform;
         stackObjects.Add(newObject);
+        int value = ARText.NewValue(values);
+        values.Add(value);
+        valueLabels.Add(ARText.Label(Anchor, value.ToString(), 0.9f, ARText.Ink, newObject.transform, startPos, LabelSide, 0));
+        UpdateTopLabel();
+        // The three starting blocks arrive on their own; only the student's pushes are explained
+        if (initialStackDone)
+            ARGuide.Explain($"Pushed {value}. It's the new top; nothing below it moved.", 1);
 
         // Spawn above the resting spot
         Vector3 restWorld = Anchor.TransformPoint(RestLocalPosition(stackObjects.Count - 1));
@@ -159,6 +173,12 @@ public class StackManager : MonoBehaviour
         GameObject topObject = stackObjects[stackObjects.Count - 1];
         stackObjects.RemoveAt(stackObjects.Count - 1);
         moving.Add(topObject);
+        int value = values[values.Count - 1];
+        values.RemoveAt(values.Count - 1);
+        Destroy(valueLabels[valueLabels.Count - 1].gameObject);
+        valueLabels.RemoveAt(valueLabels.Count - 1);
+        UpdateTopLabel();
+        ARGuide.Explain($"Popped {value} off the top. " + (values.Count > 0 ? $"{values[values.Count - 1]} is the new top." : "The stack is empty now."), 1);
 
         Vector3 targetPosition = topObject.transform.position + StackUp * spawnHeightOffset; // Move up before destroying
         StartCoroutine(AnimateMoveAndDestroy(topObject, Anchor.InverseTransformPoint(targetPosition)));
@@ -177,6 +197,16 @@ public class StackManager : MonoBehaviour
         isPopOnCooldown = false;
     }
 
+
+    private void UpdateTopLabel()
+    {
+        if (topLabel == null)
+            topLabel = ARText.Label(Anchor, "TOP", 0.6f, ARText.Ink, startPos, startPos, LabelSide * 2.2f, 0);
+        topLabel.text = "← TOP";
+        topLabel.gameObject.SetActive(stackObjects.Count > 0);
+        if (stackObjects.Count > 0)
+            ARText.Move(topLabel, stackObjects[stackObjects.Count - 1].transform, LabelSide * 2.2f, 0);
+    }
 
     // Resting spot of the object at this index, local to the anchor
     private Vector3 RestLocalPosition(int index)

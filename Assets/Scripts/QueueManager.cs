@@ -1,6 +1,10 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 
+// AR queue as a circular buffer: items stay in their slots while FRONT and REAR move, and the rear
+// wraps around to the first slot. So enqueue and dequeue each take one step, as the lesson says.
 public class QueueManager : MonoBehaviour
 {
     [Header("Prefabs and Settings")]
@@ -12,19 +16,31 @@ public class QueueManager : MonoBehaviour
     public float spawnYOffset = 2f; // Vertical spawn offset
 
     private GameObject[] elements;
+    private int[] values;
+    private TextMeshPro[] valueLabels;
     private GameObject[] spaces;
     private int queueCapacity = 5;
-    public int Count => rear;
-    public int Capacity => queueCapacity;
     private int front = 0;
-    private int rear = 0;
+    private int count = 0;
     private bool isBusy = false;
+    private TextMeshPro frontLabel, rearLabel;
+
+    public int Count => count;
+    public int Capacity => queueCapacity;
+
+    private const float LabelSize = 0.9f;
 
     void Start()
     {
         elements = new GameObject[queueCapacity];
+        values = new int[queueCapacity];
+        valueLabels = new TextMeshPro[queueCapacity];
         spaces = new GameObject[queueCapacity];
         InitializeSpaces();
+
+        frontLabel = ARText.Label(transform, "FRONT", 0.55f, ARText.Ink, spaces[0].transform, startPosition, 0, -0.075f);
+        rearLabel = ARText.Label(transform, "REAR", 0.55f, ARText.Ink, spaces[0].transform, startPosition, 0, -0.115f);
+        UpdatePointers();
     }
 
     void InitializeSpaces()
@@ -36,13 +52,15 @@ public class QueueManager : MonoBehaviour
         }
     }
 
+    private int Rear => (front + count - 1) % queueCapacity;
+
     public void Enqueue(int prefabIndex)
     {
         if (isBusy || prefabIndex < 0 || prefabIndex >= shapePrefabs.Length)
             return;
 
         // A full queue refuses new items (overflow); items only leave through Dequeue
-        if (rear >= queueCapacity)
+        if (count >= queueCapacity)
         {
             ShowMessage("The queue is full. That's an overflow! Dequeue first to make room.");
             return;
@@ -56,16 +74,26 @@ public class QueueManager : MonoBehaviour
     {
         isBusy = true;
 
-        Vector3 targetPos = spaces[rear].transform.position;
-        Quaternion targetRot = spaces[rear].transform.rotation;
-        Vector3 spawnPos = targetPos + spaces[rear].transform.up * spawnYOffset;
+        int slot = (front + count) % queueCapacity;
+        bool wrapped = count > 0 && slot < front;
+        Vector3 targetPos = spaces[slot].transform.position;
+        Quaternion targetRot = spaces[slot].transform.rotation;
+        Vector3 spawnPos = targetPos + spaces[slot].transform.up * spawnYOffset;
 
         GameObject newElement = Instantiate(shapePrefabs[prefabIndex], spawnPos, targetRot, transform);
-        elements[rear] = newElement;
+        elements[slot] = newElement;
+        values[slot] = ARText.NewValue(CurrentValues());
+        valueLabels[slot] = ARText.Label(transform, values[slot].ToString(), LabelSize, ARText.Ink, newElement.transform, startPosition, 0, 0.08f);
 
         yield return MoveToPosition(newElement.transform, targetPos, animationDuration);
 
-        rear++;
+        count++;
+        UpdatePointers();
+        if (count == 1)
+            ARGuide.Explain($"Enqueued {values[slot]}. It's both the front and the rear.", 1);
+        else
+            ARGuide.Explain($"Enqueued {values[slot]} at the rear" + (wrapped ? $", wrapping around to slot {slot}" : "") +
+                            $". Front is still {values[front]}.", 1);
         isBusy = false;
     }
 
@@ -74,33 +102,59 @@ public class QueueManager : MonoBehaviour
         if (isBusy)
             return;
 
-        if (rear == 0)
+        if (count == 0)
         {
             ShowMessage("The queue is empty. That's an underflow! Enqueue a shape first.");
             return;
         }
 
-        StartCoroutine(DequeueWithShift());
+        StartCoroutine(DequeueFront());
     }
 
-    IEnumerator DequeueWithShift()
+    // Only the front item leaves; nothing else moves, the FRONT pointer just advances
+    IEnumerator DequeueFront()
     {
         isBusy = true;
 
-        Destroy(elements[0]);
+        int slot = front;
+        int value = values[slot];
+        GameObject leaving = elements[slot];
+        elements[slot] = null;
+        Destroy(valueLabels[slot].gameObject);
+        valueLabels[slot] = null;
 
-        // Every remaining item steps forward one slot at the same time
-        for (int i = 1; i < rear; i++)
-        {
-            elements[i - 1] = elements[i];
-            Vector3 newPos = spaces[i - 1].transform.position;
-            StartCoroutine(MoveToPosition(elements[i - 1].transform, newPos, animationDuration));
-        }
-        yield return new WaitForSeconds(animationDuration);
+        front = (front + 1) % queueCapacity;
+        count--;
+        UpdatePointers();
+        ARGuide.Explain($"Dequeued {value} from the front. " +
+                        (count > 0 ? $"{values[front]} is the new front; nothing else moved." : "The queue is empty now."), 1);
 
-        rear--;
-        elements[rear] = null;
+        Vector3 up = leaving.transform.position + spaces[slot].transform.up * spawnYOffset;
+        yield return MoveToPosition(leaving.transform, up, animationDuration * 0.6f);
+        Destroy(leaving);
+
         isBusy = false;
+    }
+
+    private List<int> CurrentValues()
+    {
+        List<int> taken = new List<int>();
+        for (int i = 0; i < count; i++)
+            taken.Add(values[(front + i) % queueCapacity]);
+        return taken;
+    }
+
+    // FRONT and REAR sit under their slots; with one item both point at it
+    private void UpdatePointers()
+    {
+        if (frontLabel == null)
+            return;
+        frontLabel.gameObject.SetActive(count > 0);
+        rearLabel.gameObject.SetActive(count > 0);
+        if (count == 0)
+            return;
+        ARText.Move(frontLabel, spaces[front].transform, 0, -0.075f);
+        ARText.Move(rearLabel, spaces[Rear].transform, 0, count == 1 ? -0.115f : -0.075f);
     }
 
     private void ShowMessage(string message)

@@ -1,17 +1,21 @@
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
+// AR singly linked list. Adding or removing at the end has to walk the links from the head; inserting at
+// the head or unlinking a node only changes one pointer. Captions count those steps.
 public class LinkedListManager : MonoBehaviour
 {
     public GameObject[] nodePrefabs; // Prefabs for different shapes and colors
     public Transform startPosition;
     public float nodeSpacing = 2.0f;
+    public float slideDuration = 0.3f; // Nodes slide over on screen to keep the row tidy
 
-    private Node head;
     public GameObject nodeListParent; // Parent GameObject to encapsulate nodes
-    private int nodeCount = 0; // Counter to track the number of nodes
-    public int Count => nodeCount;
-    public int Capacity => maxNodes;
     private const int maxNodes = 5; // Maximum number of nodes allowed
+    public int Count => nodes.Count;
+    public int Capacity => maxNodes;
 
     public GameObject nullNodePrefab; // The visual representation of a null node
     private GameObject currentNullNode; // Keeps track of the current null node
@@ -23,146 +27,202 @@ public class LinkedListManager : MonoBehaviour
     public Vector3 headOffset = new Vector3(0, 1f, 0);     // Offset for head marker
     public Vector3 nullOffset = Vector3.zero;             // Offset for null node
 
+    // The list in order from the head; each node's next pointer matches it
+    private readonly List<Node> nodes = new List<Node>();
+    private readonly List<int> values = new List<int>();
+    private readonly List<TextMeshPro> valueLabels = new List<TextMeshPro>();
+    private bool isBusy;
+
+    private const float ValueSize = 0.9f;
+    private const float ValueAbove = 0.065f;
 
     void Start()
     {
         // Ensure startPosition is assigned
         if (startPosition == null)
-        {
             Debug.LogError("Start position is not assigned.");
-            return;
-        }
-
-
+        UpdateNullNodePosition();
     }
 
     public void AddNode(int prefabIndex)
     {
-        // Check if the maximum number of nodes has been reached
-        if (nodeCount >= maxNodes)
-        {
-            ARGuide.Say("The list is full.");
-            Debug.LogWarning("Maximum number of nodes reached. Cannot add more nodes.");
+        if (!CanAdd(prefabIndex))
             return;
-        }
-
-        // Check if the prefab index is within bounds
-        if (prefabIndex < 0 || prefabIndex >= nodePrefabs.Length)
+        int walked = Mathf.Max(nodes.Count - 1, 0);
+        int value = Spawn(nodes.Count, prefabIndex);
+        Relink();
+        StartCoroutine(Layout(() =>
         {
-            Debug.LogError("Prefab index out of bounds: " + prefabIndex);
+            if (nodes.Count == 1)
+                ARGuide.Explain($"Added {value}. It's the head and the only node.", 1);
+            else
+                ARGuide.Explain($"Added {value} at the end: walked {Links(walked)} from the head to the last node, then pointed it at the new one.", walked + 1);
+        }));
+    }
+
+    public void InsertAtHead(int prefabIndex)
+    {
+        if (!CanAdd(prefabIndex))
             return;
-        }
-
-        // Check if the node prefab is assigned
-        if (nodePrefabs[prefabIndex] == null)
-        {
-            Debug.LogError("Node prefab is not assigned for index: " + prefabIndex);
-            return;
-        }
-
-        // Instantiate the new node object
-        GameObject newNodeObj = Instantiate(nodePrefabs[prefabIndex], GetNextNodePosition(), startPosition.rotation, nodeListParent.transform);
-
-        // Get the Node component from the new object
-        Node newNode = newNodeObj.GetComponent<Node>();
-        if (newNode == null)
-        {
-            Debug.LogError("Node component is missing on the prefab: " + nodePrefabs[prefabIndex].name);
-            return;
-        }
-
-        // Add the new node to the linked list
-        if (head == null)
-        {
-            head = newNode;
-        }
-        else
-        {
-            Node current = head;
-            while (current.next != null)
-            {
-                current = current.next;
-            }
-            current.SetNext(newNode);
-        }
-
-        // Increment node count
-        nodeCount++;
-
-        // Update visuals
-        UpdateNullNodePosition();
-        UpdateHeadMarker();
-
-
+        int oldHead = nodes.Count > 0 ? values[0] : -1;
+        int value = Spawn(0, prefabIndex);
+        Relink();
+        StartCoroutine(Layout(() =>
+            ARGuide.Explain(oldHead < 0
+                ? $"Inserted {value} at the head. It's the only node, pointing to null."
+                : $"Inserted {value} at the head: it points to the old head ({oldHead}), and Head moves to it. The other nodes only slid over on screen.", 1)));
     }
 
     public void RemoveLastNode()
     {
-        if (head == null)
+        if (isBusy)
+            return;
+        if (nodes.Count == 0)
         {
             ARGuide.Say("The list is empty.");
             return;
         }
-
-        if (head.next == null)
-        {
-            Destroy(head.gameObject);
-            head = null;
-        }
-        else
-        {
-            Node current = head;
-            while (current.next.next != null)
-            {
-                current = current.next;
-            }
-
-            Destroy(current.next.gameObject);
-            current.next = null;
-        }
-
-        nodeCount--;
-        UpdateNullNodePosition();
-        UpdateHeadMarker();
-
-
+        int walked = Mathf.Max(nodes.Count - 2, 0);
+        bool only = nodes.Count == 1;
+        int value = Remove(nodes.Count - 1);
+        StartCoroutine(Layout(() =>
+            ARGuide.Explain(only
+                ? $"Removed {value}. The list is empty now: Head points to null."
+                : $"Removed {value} from the end: walked {Links(walked)} to the node before it and pointed that node to null.", walked + 1)));
     }
 
+    // index is 0-based from the head
+    public void DeleteAt(int index)
+    {
+        if (isBusy)
+            return;
+        if (nodes.Count == 0)
+        {
+            ARGuide.Say("The list is empty.");
+            return;
+        }
+        if (index >= nodes.Count)
+        {
+            ARGuide.Say($"There's no node {index + 1}. The list has {nodes.Count} node{(nodes.Count == 1 ? "" : "s")}.");
+            return;
+        }
+        int value = Remove(index);
+        string next = index < nodes.Count ? values[index].ToString() : "null";
+        StartCoroutine(Layout(() =>
+            ARGuide.Explain(index == 0
+                ? $"Deleted {value}, the head. Head now points to {next}. Nothing else changed."
+                : $"Deleted {value}: walked {Links(index - 1)} to the node before it, then pointed that node to {next}.", Mathf.Max(index, 1))
+        ));
+    }
+
+    private bool CanAdd(int prefabIndex)
+    {
+        if (isBusy)
+            return false;
+        if (nodes.Count >= maxNodes)
+        {
+            ARGuide.Say("The list is full.");
+            return false;
+        }
+        if (prefabIndex < 0 || prefabIndex >= nodePrefabs.Length || nodePrefabs[prefabIndex] == null)
+        {
+            Debug.LogError("Prefab index out of bounds or not assigned: " + prefabIndex);
+            return false;
+        }
+        return true;
+    }
+
+    // Creates a node at a list position; it appears at its final spot once the others have slid over
+    private int Spawn(int index, int prefabIndex)
+    {
+        GameObject newNodeObj = Instantiate(nodePrefabs[prefabIndex], PositionAt(index), startPosition.rotation, nodeListParent.transform);
+        Node node = newNodeObj.GetComponent<Node>();
+        if (node == null)
+            node = newNodeObj.AddComponent<Node>();
+        int value = ARText.NewValue(values);
+        node.SetData(value);
+        nodes.Insert(index, node);
+        values.Insert(index, value);
+        valueLabels.Insert(index, ARText.Label(nodeListParent.transform, value.ToString(), ValueSize, ARText.Ink, node.transform, startPosition, 0, ValueAbove));
+        return value;
+    }
+
+    private int Remove(int index)
+    {
+        int value = values[index];
+        Destroy(nodes[index].gameObject);
+        Destroy(valueLabels[index].gameObject);
+        nodes.RemoveAt(index);
+        values.RemoveAt(index);
+        valueLabels.RemoveAt(index);
+        Relink();
+        return value;
+    }
+
+    private void Relink()
+    {
+        for (int i = 0; i < nodes.Count; i++)
+            nodes[i].SetNext(i + 1 < nodes.Count ? nodes[i + 1] : null);
+    }
+
+    private Vector3 PositionAt(int index) => startPosition.position + startPosition.right * (nodeSpacing * index);
+
+    // Slides every node to its spot in the row, then moves the Head and Null labels and explains
+    private IEnumerator Layout(System.Action explain)
+    {
+        isBusy = true;
+        Vector3[] from = new Vector3[nodes.Count];
+        for (int i = 0; i < nodes.Count; i++)
+            from[i] = nodes[i].transform.position;
+        for (float t = 0; t < slideDuration; t += Time.deltaTime)
+        {
+            for (int i = 0; i < nodes.Count; i++)
+                nodes[i].transform.position = Vector3.Lerp(from[i], PositionAt(i), t / slideDuration);
+            yield return null;
+        }
+        for (int i = 0; i < nodes.Count; i++)
+            nodes[i].transform.position = PositionAt(i);
+
+        UpdateNullNodePosition();
+        UpdateHeadMarker();
+        explain();
+        isBusy = false;
+    }
 
     private void UpdateNullNodePosition()
     {
-        if (currentNullNode != null)
-        {
-            Destroy(currentNullNode);
-        }
-
         // Null sits one step past the last node, or at the start when the list is empty
-        Node last = LastNode();
-        Vector3 position = GetNextNodePosition() + startPosition.rotation * nullOffset;
-        currentNullNode = Instantiate(nullNodePrefab, position, startPosition.rotation, nodeListParent.transform);
-        AttachLabel(currentNullNode, last != null ? last.transform : startPosition,
-            (last != null ? nodeSpacing : 0f) + nullOffset.x, nullOffset.y);
+        Transform follow = nodes.Count > 0 ? nodes[nodes.Count - 1].transform : startPosition;
+        float along = (nodes.Count > 0 ? nodeSpacing : 0f) + nullOffset.x;
+        if (currentNullNode == null)
+        {
+            currentNullNode = Instantiate(nullNodePrefab, PositionAt(nodes.Count) + startPosition.rotation * nullOffset, startPosition.rotation, nodeListParent.transform);
+            AttachLabel(currentNullNode, follow, along, nullOffset.y);
+        }
+        else
+        {
+            ARLabel label = currentNullNode.GetComponent<ARLabel>();
+            label.follow = follow;
+            label.alongRow = along;
+        }
     }
-
-
 
     private void UpdateHeadMarker()
     {
-        if (head == null)
+        if (nodes.Count == 0)
         {
             if (currentHeadMarker != null)
-            {
-                Destroy(currentHeadMarker);
-                currentHeadMarker = null;
-            }
+                currentHeadMarker.SetActive(false);
             return;
         }
 
         if (currentHeadMarker == null)
         {
-            currentHeadMarker = Instantiate(headMarkerPrefab, head.transform.position + startPosition.rotation * headOffset, startPosition.rotation, nodeListParent.transform);
-            AttachLabel(currentHeadMarker, head.transform, headOffset.x, headOffset.y);
+            currentHeadMarker = Instantiate(headMarkerPrefab, nodes[0].transform.position + startPosition.rotation * headOffset, startPosition.rotation, nodeListParent.transform);
+            AttachLabel(currentHeadMarker, nodes[0].transform, headOffset.x, headOffset.y);
         }
+        currentHeadMarker.SetActive(true);
+        currentHeadMarker.GetComponent<ARLabel>().follow = nodes[0].transform;
     }
 
     // Labels follow their node, sit above it whichever way the card faces, and turn toward the camera
@@ -175,32 +235,5 @@ public class LinkedListManager : MonoBehaviour
         arLabel.above = above;
     }
 
-    private Node LastNode()
-    {
-        Node current = head;
-        while (current != null && current.next != null)
-            current = current.next;
-        return current;
-    }
-
-
-
-    private Vector3 GetNextNodePosition()
-    {
-        if (head == null)
-        {
-            return startPosition.position;
-        }
-        else
-        {
-            Node current = head;
-            while (current.next != null)
-            {
-                current = current.next;
-            }
-
-            // Use the position of the last node and offset by nodeSpacing along the marker's X-axis
-            return current.transform.position + startPosition.right * nodeSpacing;
-        }
-    }
+    private static string Links(int n) => n == 1 ? "1 link" : $"{n} links";
 }

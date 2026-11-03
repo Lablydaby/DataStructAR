@@ -2418,8 +2418,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topicName: Queue
-  controlsHint: Pick a shape, then tap Enqueue to add it at the rear or Dequeue to
-    remove the front. Tap Go to Quiz when you're ready.
+  controlsHint: 'Pick a shape, then tap Enqueue to add it at the rear or Dequeue to remove the front. Watch FRONT and REAR move. Tap Go to Quiz when you''re ready.'
   hintDuration: 6
 --- !u!4 &1647487091
 Transform:

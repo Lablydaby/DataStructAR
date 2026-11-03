@@ -24,4 +24,4 @@ Arrays are a good fit when you read data often and know how many items you need 
 > - Inserting or deleting in the middle is O(n), because elements shift.
 
 # Try it in AR
-Point your camera at the **Array** marker card. Pick a shape, then tap **Add** to fill the next empty slot or **Remove** to empty the last one.
+Point your camera at the **Array** marker card. Pick a shape, then tap **Add** to fill the next empty slot or **Remove** to empty the last one. Pick an **index** and tap **Insert at** or **Delete at** to watch the elements shift, and check how many steps it took.

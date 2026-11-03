@@ -8,6 +8,7 @@ public class ARLabel : MonoBehaviour
     public Transform marker;   // Frame the row of objects is laid out in
     public float alongRow;     // World units along the marker's right axis
     public float above;        // World units up
+    public float lift;         // World units off the card's surface, so it never sits behind the card
 
     private Vector3 upLocal;
 
@@ -24,7 +25,7 @@ public class ARLabel : MonoBehaviour
         Vector3 up = ARUp.ClosestMarkerAxis(marker, marker.TransformDirection(upLocal).normalized);
         upLocal = marker.InverseTransformDirection(up);
 
-        transform.position = follow.position + marker.right * alongRow + up * above;
+        transform.position = follow.position + marker.right * alongRow + up * above + marker.up * lift;
 
         // Text reads correctly when its forward points away from the viewer
         Camera camera = Camera.main;

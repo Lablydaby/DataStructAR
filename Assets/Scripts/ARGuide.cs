@@ -15,7 +15,6 @@ public class ARGuide : MonoBehaviour
 
     public string topicName = "Array";
     [TextArea] public string controlsHint = "Pick a shape, then tap Add or Remove.";
-    public float hintDuration = 2.5f; // How long a message stays up
 
     private ImageTargetBehaviour[] targets;
     private RectTransform root;
@@ -23,7 +22,6 @@ public class ARGuide : MonoBehaviour
     private TextMeshProUGUI scanTitle, scanBody, toastText, countText;
     private CanvasGroup addGroup, removeGroup;
     private bool hasFoundMarker;
-    private Coroutine hideToast;
     private System.Func<int> count;
     private int capacity = 5;
 
@@ -32,12 +30,26 @@ public class ARGuide : MonoBehaviour
     private GameObject shapeList;
     private TextMeshProUGUI shapeLabel;
 
-    // Managers report full/empty through this
+    private Image captionIcon;
+    private TextMeshProUGUI captionMark, stepsText;
+    private GameObject stepsChip;
+    private TextMeshProUGUI positionText;
+    private int position;
+
+    // Managers report problems (full, empty, gaps) through this; shown in red
     public static void Say(string message)
     {
         ARGuide guide = FindObjectOfType<ARGuide>();
         if (guide != null)
-            guide.ShowMessage(message);
+            guide.Narrate(message, -1, true);
+    }
+
+    // Managers describe what an operation just did, and how many steps it took
+    public static void Explain(string message, int steps)
+    {
+        ARGuide guide = FindObjectOfType<ARGuide>();
+        if (guide != null)
+            guide.Narrate(message, steps, false);
     }
 
     private void Start()
@@ -93,21 +105,19 @@ public class ARGuide : MonoBehaviour
 
     public void DismissHowTo() => howTo.SetActive(false);
 
-    public void ShowMessage(string message)
+    public void ShowMessage(string message) => Narrate(message, -1, true);
+
+    // The caption stays up until the next action, so students can read it at their own pace
+    public void Narrate(string message, int steps, bool error)
     {
         if (toast == null)
             return;
         toastText.text = message;
+        captionIcon.color = error ? DK.Red : DK.Indigo700;
+        captionMark.text = error ? "!" : "i";
+        stepsChip.SetActive(steps >= 0);
+        stepsText.text = steps == 1 ? "1 step" : $"{steps} steps";
         toast.SetActive(true);
-        if (hideToast != null)
-            StopCoroutine(hideToast);
-        hideToast = StartCoroutine(HideToastAfterDelay());
-    }
-
-    private IEnumerator HideToastAfterDelay()
-    {
-        yield return new WaitForSeconds(hintDuration);
-        toast.SetActive(false);
     }
 
     private void ShowSearching()
@@ -245,12 +255,78 @@ public class ARGuide : MonoBehaviour
         countText = DK.Text(counter, "0/5", 17, DK.Indigo900, true);
         countText.enableWordWrapping = false;
 
+        if (topicName == "Array" || topicName == "Linked List")
+            BuildPositionRow(group);
+
         if (originalShapes != null)
             BuildShapePicker(group);
 
         Button quiz = DK.Pill(group, "Go to Quiz", DK.Indigo700, DK.White, 14, 17, () => originalQuiz?.onClick.Invoke(), null, "arrow-right");
         DK.Anchor(quiz, new Vector2(1, 0), new Vector2(-20, 20), new Vector2(190, 56));
         controls.SetActive(false);
+    }
+
+    private int Shape => originalShapes != null ? originalShapes.value : 0;
+
+    // Array: pick an index, then insert or delete there. Linked list: insert at the head, or delete node N.
+    private void BuildPositionRow(RectTransform group)
+    {
+        bool array = topicName == "Array";
+        Image bar = DK.Box(group, DK.White, 14, "Position");
+        DK.At(bar, 82, 80, 0, 52);
+        HorizontalLayoutGroup row = DK.Line(bar.gameObject, 4);
+        row.padding = new RectOffset(4, 4, 4, 4);
+        bar.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        if (!array)
+        {
+            Button head = DK.Pill(bar.transform, "Insert at head", DK.Indigo700, DK.White, 10, 15,
+                () => FindObjectOfType<LinkedListManager>()?.InsertAtHead(Shape), "plus");
+            DK.Size(head, 168, 44);
+            Image divider = DK.Box(bar.transform, DK.Lavender300, 0, "Divider");
+            DK.Size(divider, 1, 28);
+        }
+
+        position = array ? 0 : 1;
+        Button less = DK.Pill(bar.transform, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(-1), "minus");
+        DK.Size(less, 40, 44);
+        RectTransform labelCell = UiKit.Create("Position", bar.transform);
+        DK.Column(labelCell.gameObject, 2, new RectOffset(4, 4, 6, 0), TextAnchor.UpperCenter).childForceExpandWidth = false;
+        DK.Caps(labelCell, array ? "INDEX" : "NODE", 10, DK.Lavender500, TextAlignmentOptions.Center);
+        positionText = DK.Text(labelCell, "", 17, DK.Indigo900, true, TextAlignmentOptions.Center);
+        DK.Size(positionText, 44, -1);
+        Button more = DK.Pill(bar.transform, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(1), "plus");
+        DK.Size(more, 40, 44);
+        Step(0);
+
+        if (array)
+        {
+            Button insert = DK.Pill(bar.transform, "Insert at", DK.Indigo700, DK.White, 10, 15,
+                () => FindObjectOfType<ArrayManager>()?.InsertAt(position, Shape));
+            DK.Size(insert, 104, 44);
+        }
+        Button delete = DK.Pill(bar.transform, array ? "Delete at" : "Delete", DK.Clear, DK.Indigo900, 10, 15,
+            () =>
+            {
+                if (array) FindObjectOfType<ArrayManager>()?.DeleteAt(position);
+                else FindObjectOfType<LinkedListManager>()?.DeleteAt(position - 1);
+            }, "minus");
+        DK.Size(delete, array ? 116 : 100, 44);
+    }
+
+    private void Step(int delta)
+    {
+        int min = topicName == "Array" ? 0 : 1;
+        int max = min + capacity - 1;
+        position = Mathf.Clamp(position + delta, min, max);
+        positionText.text = position.ToString();
+    }
+
+    // For the screenshot tool
+    public void SetPosition(int value)
+    {
+        position = value;
+        Step(0);
     }
 
     private void BuildShapePicker(RectTransform group)
@@ -295,17 +371,30 @@ public class ARGuide : MonoBehaviour
 
     private void BuildToast()
     {
-        Image card = DK.Box(root, DK.White, 14, "Toast");
-        DK.Anchor(card, new Vector2(0, 0), new Vector2(20, 20), new Vector2(0, 56));
+        Image card = DK.Box(root, DK.White, 14, "Caption");
+        DK.Anchor(card, new Vector2(0.5f, 0), new Vector2(0, 20), new Vector2(400, 0));
         HorizontalLayoutGroup row = DK.Line(card.gameObject, 10);
-        row.padding = new RectOffset(14, 20, 0, 0);
-        card.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-        Image bang = DK.Box(card.transform, DK.Red, 13, "Bang");
-        DK.Size(bang, 26, 26);
-        TextMeshProUGUI mark = DK.Text(bang.transform, "!", 15, DK.White, true, TextAlignmentOptions.Center);
-        UiKit.Stretch(mark.rectTransform, Vector2.zero, Vector2.one);
-        toastText = DK.Text(card.transform, "", 15, DK.Indigo900, true);
-        toastText.enableWordWrapping = false;
+        row.padding = new RectOffset(12, 12, 10, 10);
+        row.childAlignment = TextAnchor.MiddleLeft;
+        card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        DK.Size(card, -1, -1).minHeight = 56;
+
+        captionIcon = DK.Box(card.transform, DK.Indigo700, 13, "Icon");
+        DK.Size(captionIcon, 26, 26);
+        captionMark = DK.Text(captionIcon.transform, "i", 15, DK.White, true, TextAlignmentOptions.Center);
+        UiKit.Stretch(captionMark.rectTransform, Vector2.zero, Vector2.one);
+
+        toastText = DK.Text(card.transform, "", 14, DK.Indigo900, true);
+        DK.Size(toastText, -1, -1, 1);
+
+        Image chip = DK.Box(card.transform, DK.Lavender100, 8, "Steps");
+        DK.Size(chip, -1, 26);
+        HorizontalLayoutGroup pad = DK.Line(chip.gameObject, 0, TextAnchor.MiddleCenter);
+        pad.padding = new RectOffset(8, 8, 5, 5);
+        stepsText = DK.Text(chip.transform, "", 12, DK.Indigo700, true, TextAlignmentOptions.Center);
+        stepsText.enableWordWrapping = false;
+        stepsChip = chip.gameObject;
+
         toast = card.gameObject;
         toast.SetActive(false);
     }

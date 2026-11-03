@@ -20,6 +20,9 @@ public static class UiKit
     public static TMP_FontAsset Font(string name)
     {
         TMP_FontAsset font = Find<TMP_FontAsset>(name);
+        // Scenes that don't reference the font themselves (e.g. the AR scenes on device) load the shipped copy
+        if (font == null)
+            font = Resources.Load<TMP_FontAsset>("Fonts/" + name);
         return font != null ? font : TMP_Settings.defaultFontAsset;
     }
 
