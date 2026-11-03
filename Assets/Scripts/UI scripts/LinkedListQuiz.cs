@@ -91,6 +91,7 @@ public class LinkedListQuiz : MonoBehaviour
 
     public void Complete()
     {
+        Progress.MarkPracticeDone("Linked List");
         OrientationController.Instance.SetPortrait();
         LinkedListPanel.SetActive(false); // Hide the quiz panel
     }

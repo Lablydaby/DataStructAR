@@ -207,6 +207,7 @@ public class StackQuiz : MonoBehaviour
 
     public void Complete()
     {
+        Progress.MarkPracticeDone("Stack");
         OrientationController.Instance.SetPortrait();
         StackPanel.SetActive(false);
     }

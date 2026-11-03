@@ -4182,6 +4182,7 @@ MonoBehaviour:
       - 'O(1) '
       - O(n log n)
       correctAnswerIndex: 2
+      explanation: 'Array elements sit side by side in memory, so any index can be reached with one calculation. That makes access O(1).'
     - question: Which of the following best describes an array?
       options:
       - A dynamic data structure with unlimited size
@@ -4189,6 +4190,7 @@ MonoBehaviour:
       - A fixed-size data structure storing elements of the same data type
       - 'A hierarchical data structure '
       correctAnswerIndex: 2
+      explanation: 'An array has a fixed size and holds elements of the same type in contiguous (side-by-side) memory.'
     - question: What happens when inserting an element in the middle of an array?
       options:
       - 'The array size is automatically increased '
@@ -4196,6 +4198,7 @@ MonoBehaviour:
       - The new element replaces the existing element at that index
       - The array gets reorganized into a linked list
       correctAnswerIndex: 1
+      explanation: 'To make room, every element from the insertion point to the end moves one place to the right.'
     - question: Which of the following types of arrays is used for representing a
         matrix?
       options:
@@ -4204,6 +4207,7 @@ MonoBehaviour:
       - 'Circular array '
       - Sparse array
       correctAnswerIndex: 1
+      explanation: 'A matrix has rows and columns, so it needs a multi-dimensional (2D) array.'
     - question: What is the main advantage of arrays over linked lists?
       options:
       - Dynamic memory allocation
@@ -4211,6 +4215,7 @@ MonoBehaviour:
       - Easier deletion of elements
       - Better for implementing stacks and queues
       correctAnswerIndex: 1
+      explanation: 'Arrays can jump straight to any index, while a linked list has to walk node by node from the head.'
   - categoryName: Linked List
     questions:
     - question: 'What is a key characteristic of a linked list? '
@@ -4220,6 +4225,7 @@ MonoBehaviour:
       - 'Elements can be accessed in O(1) time '
       - It cannot store duplicate elements
       correctAnswerIndex: 1
+      explanation: 'Each node stores its data plus a pointer to the next node. The nodes can be anywhere in memory.'
     - question: Which type of linked list allows traversal in both directions?
       options:
       - Singly linked list
@@ -4227,6 +4233,7 @@ MonoBehaviour:
       - Circular linked list
       - None of the above
       correctAnswerIndex: 1
+      explanation: 'A doubly linked list stores a next and a previous pointer in every node, so you can walk both ways.'
     - question: What is the time complexity of inserting a node at the beginning
         of a singly linked list?
       options:
@@ -4235,6 +4242,7 @@ MonoBehaviour:
       - O(log n)
       - O(n log n)
       correctAnswerIndex: 0
+      explanation: 'The new node just points to the old head and becomes the head. No other nodes move, so it is O(1).'
     - question: 'Which of the following is an advantage of linked lists over arrays? '
       options:
       - Constant-time access to any element
@@ -4242,6 +4250,7 @@ MonoBehaviour:
       - Uses less memory per element
       - No need for extra pointers
       correctAnswerIndex: 1
+      explanation: 'A linked list grows and shrinks one node at a time, so it never needs a fixed size up front.'
     - question: 'What is a potential drawback of using a linked list? '
       options:
       - Fixed size
@@ -4249,6 +4258,7 @@ MonoBehaviour:
       - Extra memory for pointers
       - Elements must be of the same type
       correctAnswerIndex: 2
+      explanation: 'Every node needs extra memory for its pointer on top of the data it stores.'
   - categoryName: Stack
     questions:
     - question: What is the principle behind stack operations?
@@ -4258,6 +4268,7 @@ MonoBehaviour:
       - Random order
       - None of the above
       correctAnswerIndex: 1
+      explanation: 'A stack is Last-In, First-Out: the last item pushed is the first one popped.'
     - question: 'Which of the following is not an operation performed on a stack? '
       options:
       - Push
@@ -4265,6 +4276,7 @@ MonoBehaviour:
       - Peek
       - Enqueue
       correctAnswerIndex: 3
+      explanation: 'Enqueue belongs to a queue. A stack uses push, pop and peek.'
     - question: What is the time complexity of pushing an element onto a stack?
       options:
       - O(1)
@@ -4272,6 +4284,7 @@ MonoBehaviour:
       - 'O(log n) '
       - 'O(n log n) '
       correctAnswerIndex: 0
+      explanation: 'Push only touches the top of the stack, so it takes the same time however big the stack is: O(1).'
     - question: 'What happens when you try to pop an element from an empty stack? '
       options:
       - Returns a default value
@@ -4279,6 +4292,7 @@ MonoBehaviour:
       - Results in a stack underflow error
       - Nothing happens
       correctAnswerIndex: 2
+      explanation: 'Popping an empty stack has nothing to remove. That is called a stack underflow.'
     - question: Which data structure is commonly used for function call management
         in programming languages?
       options:
@@ -4287,6 +4301,7 @@ MonoBehaviour:
       - Linked list
       - Graph
       correctAnswerIndex: 1
+      explanation: 'Each function call is pushed onto the call stack and popped when it returns, last in, first out.'
   - categoryName: Queue
     questions:
     - question: What is the primary principle behind a queue?
@@ -4296,6 +4311,7 @@ MonoBehaviour:
       - Random order
       - None of the above
       correctAnswerIndex: 0
+      explanation: 'A queue is First-In, First-Out: the first item added is the first one removed, like a line of people.'
     - question: Which operation adds an element to the end of a queue?
       options:
       - Push
@@ -4303,6 +4319,7 @@ MonoBehaviour:
       - Enqueue
       - Dequeue
       correctAnswerIndex: 2
+      explanation: 'Enqueue adds an item at the rear of the queue. Dequeue removes one from the front.'
     - question: What is the time complexity of enqueuing an element into a queue?
       options:
       - O(1)
@@ -4310,6 +4327,7 @@ MonoBehaviour:
       - O(log n)
       - O(n log n)
       correctAnswerIndex: 0
+      explanation: 'Enqueue only touches the rear of the queue, so it is O(1).'
     - question: 'What happens when you try to dequeue an element from an empty queue? '
       options:
       - It returns the last inserted element
@@ -4317,6 +4335,7 @@ MonoBehaviour:
       - It returns a null value
       - It removes an arbitrary element
       correctAnswerIndex: 1
+      explanation: 'Dequeuing an empty queue has nothing to remove. That is called a queue underflow.'
     - question: What is a circular queue?
       options:
       - A queue that never gets full
@@ -4324,6 +4343,7 @@ MonoBehaviour:
       - A queue where the last position is connected to the first
       - A queue with random insertions and deletions
       correctAnswerIndex: 2
+      explanation: 'In a circular queue the last slot wraps around to the first, so space freed at the front is reused.'
   questionText: {fileID: 1424762274}
   questionNumberText: {fileID: 1168908587}
   optionButtons:

@@ -54,6 +54,7 @@ public static class ScreenshotTour
     public static void Run()
     {
         PlayerPrefs.SetInt("ReturnedFromAR", 0);
+        ClearProgress();
         PlayerPrefs.Save();
         Start("", OutputFolder, "Assets/Scenes/MainMenu.unity", PortraitWidth, PortraitHeight);
     }
@@ -153,8 +154,13 @@ public static class ScreenshotTour
             Shot(3f, slug + "-quiz");
             Click(0.2f, "Quiz/BG/Question1");
             Shot(0.4f, slug + "-quiz-feedback");
+            // A second tap dismisses each explanation
+            Click(0.3f, "Quiz/BG/Question1");
             for (int q = 1; q < 5; q++)
-                Click(1.2f, "Quiz/BG/Question1");
+            {
+                Click(0.4f, "Quiz/BG/Question1");
+                Click(0.6f, "Quiz/BG/Question1");
+            }
             Shot(1.5f, slug + "-quiz-finished");
             Click(0.3f, "Quiz/BG/Done");
             Shot(1f, slug + "-result");
@@ -162,13 +168,41 @@ public static class ScreenshotTour
             Do(0.3f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
             Click(0.3f, "Result/BG/Next");
             Shot(1.5f, slug + "-practice");
+            if (i == 0)
+            {
+                Do(0.2f, () => TypeArrayInsert("1", "45"));
+                Shot(0.45f, "array-practice-shifting");
+                Shot(1.2f, "array-practice-wrong");
+                Do(3f, () => TypeArrayInsert("3", "45"));
+                Shot(1.2f, "array-practice-correct");
+            }
 
             // Same as the AR scene's exit button, which returns to the topic menu
             Do(0.5f, () => ReturnToMenu(2));
         }
 
+        Shot(2f, "menu-progress");
         Do(1f, () => { PlayerPrefs.SetInt("ReturnedFromAR", 0); PlayerPrefs.Save(); });
         return steps;
+    }
+
+    private static void TypeArrayInsert(string index, string value)
+    {
+        InsertValueManager insert = Object.FindObjectOfType<InsertValueManager>();
+        insert.indexInput.text = index;
+        insert.valueInput.text = value;
+        insert.OnInsertButtonClicked();
+    }
+
+    // So the menu's saved-progress labels start from scratch on every tour
+    private static void ClearProgress()
+    {
+        foreach (string topic in new[] { "Array", "Linked List", "Stack", "Queue" })
+        {
+            PlayerPrefs.DeleteKey("BestScore_" + topic);
+            PlayerPrefs.DeleteKey("QuestionCount_" + topic);
+            PlayerPrefs.DeleteKey("PracticeDone_" + topic);
+        }
     }
 
     private static void Tick()

@@ -146,6 +146,7 @@ public class QueueQuiz : MonoBehaviour
 
     public void CompleteQueue()
     {
+        Progress.MarkPracticeDone("Queue");
         OrientationController.Instance.SetPortrait();
         queuePanel.SetActive(false); 
 

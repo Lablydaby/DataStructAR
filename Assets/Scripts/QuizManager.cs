@@ -14,6 +14,7 @@ public class QuizManager : MonoBehaviour
         public string question;
         public string[] options;
         public int correctAnswerIndex;
+        [TextArea] public string explanation; // Shown after answering, so students learn why
     }
 
     [System.Serializable]
@@ -65,6 +66,11 @@ public class QuizManager : MonoBehaviour
 
     [Header("Answer Feedback")]
     public float answerRevealSeconds = 1f;
+    public float explanationSeconds = 6f; // Moves on by itself after this, or sooner on a tap
+
+    private GameObject explanationPanel;
+    private TextMeshProUGUI explanationText;
+    private bool continueTapped;
 
 
     [Header("Completion Panels Per Category")]
@@ -93,6 +99,11 @@ public class QuizManager : MonoBehaviour
         startARButton.onClick.AddListener(LoadARScene);
         HighlightCategory("");
         SetUpRetryButton();
+        BuildExplanationPanel();
+        AddProgressLabel(arrayButton, "Array");
+        AddProgressLabel(linkedListButton, "Linked List");
+        AddProgressLabel(stackButton, "Stack");
+        AddProgressLabel(queueButton, "Queue");
 
         if (onQuizCompleteObject != null)
             onQuizCompleteObject.SetActive(false);
@@ -170,6 +181,34 @@ public class QuizManager : MonoBehaviour
         retry.onClick.AddListener(RetryQuiz);
     }
 
+    private static void AddProgressLabel(Button button, string topic)
+    {
+        if (button != null)
+            button.gameObject.AddComponent<TopicProgressLabel>().topic = topic;
+    }
+
+    // Card between the question and the options that explains the right answer.
+    // Tapping it (or anywhere over it) moves on to the next question.
+    private void BuildExplanationPanel()
+    {
+        Transform quizBG = optionButtons[0].transform.parent;
+
+        Image panel = UiKit.Panel(quizBG, UiKit.CardTint);
+        panel.name = "Explanation";
+        panel.raycastTarget = true;
+        UiKit.Stretch(panel.rectTransform, new Vector2(0.06f, 0.495f), new Vector2(0.95f, 0.605f));
+        panel.gameObject.AddComponent<Button>().onClick.AddListener(() => continueTapped = true);
+
+        explanationText = UiKit.Text(panel.transform, "", "Poppins-Regular SDF", 34, UiKit.Body, TextAlignmentOptions.Left);
+        explanationText.enableAutoSizing = true;
+        explanationText.fontSizeMin = 22;
+        explanationText.fontSizeMax = 34;
+        UiKit.Stretch(explanationText.rectTransform, new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.92f));
+
+        explanationPanel = panel.gameObject;
+        explanationPanel.SetActive(false);
+    }
+
     public void RetryQuiz()
     {
         resultPanel.SetActive(false);
@@ -185,10 +224,15 @@ public class QuizManager : MonoBehaviour
 
         if (selectedCategory != null)
         {
-            currentQuestions = new List<QuizQuestion>(selectedCategory.questions);
+            currentQuestions = ShuffledQuestions(selectedCategory.questions);
             currentQuestionIndex = 0;
             score = 0;
+
+            // Drop a reveal left running by leaving mid-question
+            StopAllCoroutines();
             isRevealingAnswer = false;
+            if (explanationPanel != null)
+                explanationPanel.SetActive(false);
 
             if (onQuizCompleteObject != null)
                 onQuizCompleteObject.SetActive(false);
@@ -212,6 +256,47 @@ public class QuizManager : MonoBehaviour
         else
         {
             Debug.LogError("Category not found: " + categoryName);
+        }
+    }
+
+    // A fresh order of questions and of each question's options for every attempt, so a retry
+    // can't be passed by remembering letters. Copies, so the scene's questions stay as authored.
+    private static List<QuizQuestion> ShuffledQuestions(List<QuizQuestion> source)
+    {
+        List<QuizQuestion> questions = new List<QuizQuestion>();
+        foreach (QuizQuestion original in source)
+        {
+            int[] order = new int[original.options.Length];
+            for (int i = 0; i < order.Length; i++)
+                order[i] = i;
+            Shuffle(order);
+
+            QuizQuestion copy = new QuizQuestion
+            {
+                question = original.question.Trim(),
+                options = new string[order.Length],
+                explanation = original.explanation,
+            };
+            for (int i = 0; i < order.Length; i++)
+            {
+                copy.options[i] = original.options[order[i]].Trim();
+                if (order[i] == original.correctAnswerIndex)
+                    copy.correctAnswerIndex = i;
+            }
+            questions.Add(copy);
+        }
+
+        QuizQuestion[] shuffled = questions.ToArray();
+        Shuffle(shuffled);
+        return new List<QuizQuestion>(shuffled);
+    }
+
+    private static void Shuffle<T>(T[] items)
+    {
+        for (int i = items.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (items[i], items[j]) = (items[j], items[i]);
         }
     }
 
@@ -257,7 +342,10 @@ public class QuizManager : MonoBehaviour
             return; // Prevent crash
         }
         if (isRevealingAnswer)
-            return; // Ignore taps while the previous answer is shown
+        {
+            continueTapped = true; // A tap on an option while the explanation shows moves on
+            return;
+        }
 
         Debug.Log("Answer submitted. Selected index: " + selectedIndex);
 
@@ -291,7 +379,31 @@ public class QuizManager : MonoBehaviour
                 SetOptionAlpha(i, 0.45f);
         }
 
-        yield return new WaitForSeconds(answerRevealSeconds);
+        QuizQuestion question = currentQuestions[currentQuestionIndex];
+        if (!string.IsNullOrWhiteSpace(question.explanation) && explanationPanel != null)
+        {
+            bool correct = selectedIndex == correctIndex;
+            string verdict = correct
+                ? $"<b><color=#{ColorUtility.ToHtmlStringRGB(UiKit.Correct)}>Correct!</color></b>"
+                : $"<b><color=#{ColorUtility.ToHtmlStringRGB(UiKit.Wrong)}>Not quite.</color></b> The answer is <b>{question.options[correctIndex]}</b>.";
+            explanationText.text = $"{verdict} {question.explanation}\n<size=80%><color=#{ColorUtility.ToHtmlStringRGB(UiKit.Brand)}>Tap to continue</color></size>";
+            explanationPanel.SetActive(true);
+
+            // Let go of the tap that picked the answer before listening for the next one
+            yield return new WaitForSeconds(0.3f);
+            continueTapped = false;
+            float shownFor = 0.3f;
+            while (!continueTapped && shownFor < explanationSeconds)
+            {
+                shownFor += Time.deltaTime;
+                yield return null;
+            }
+            explanationPanel.SetActive(false);
+        }
+        else
+        {
+            yield return new WaitForSeconds(answerRevealSeconds);
+        }
 
         for (int i = 0; i < optionButtons.Length; i++)
             ResetOptionStyle(i);
@@ -331,6 +443,7 @@ public class QuizManager : MonoBehaviour
         Debug.Log("Quiz completed. Score: " + score);
 
         UpdateStars(score);
+        Progress.SaveQuizScore(PlayerPrefs.GetString("SelectedCategory", ""), score, currentQuestions.Count);
 
         if (onQuizCompleteObject != null)
             onQuizCompleteObject.SetActive(true);
