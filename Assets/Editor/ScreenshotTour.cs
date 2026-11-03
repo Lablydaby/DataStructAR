@@ -33,6 +33,7 @@ public static class ScreenshotTour
     private const string QueueOverflowMode = "QueueOverflow";
 
     private const string UprightMarkersMode = "UprightMarkers";
+    private const string ARChecksMode = "ARChecks";
 
     private static List<(float wait, Action action)> steps;
     private static List<(float wait, Action action)> Steps =>
@@ -40,6 +41,7 @@ public static class ScreenshotTour
         {
             QueueOverflowMode => BuildQueueOverflowSteps(),
             UprightMarkersMode => BuildUprightMarkerSteps(),
+            ARChecksMode => BuildARCheckSteps(),
             _ => BuildSteps(),
         };
 
@@ -156,6 +158,80 @@ public static class ScreenshotTour
         Shot(0.8f, "queue-dequeued-twice");
         Do(0.2f, () => Que().Enqueue(1));
         Shot(1.4f, "queue-wrapped");
+        return list;
+    }
+
+    // Runs every AR control through its edge cases; the captions land in the log as [Caption] lines
+    public static void RunARChecksAndQuit()
+    {
+        SessionState.SetBool(QuitKey, true);
+        Start(ARChecksMode, OutputFolder + "/ARChecks", "Assets/Scenes/MainMenu.unity", PortraitHeight, PortraitWidth);
+    }
+
+    private static List<(float, Action)> BuildARCheckSteps()
+    {
+        List<(float, Action)> list = new List<(float, Action)>();
+        void Do(float wait, Action action) => list.Add((wait, action));
+        void Note(string text) => Do(0.05f, () => Debug.Log("[Check] " + text));
+        ArrayManager Arr() => Object.FindObjectOfType<ArrayManager>();
+        LinkedListManager Lst() => Object.FindObjectOfType<LinkedListManager>();
+        StackManager Stk() => Object.FindObjectOfType<StackManager>();
+        QueueManager Que() => Object.FindObjectOfType<QueueManager>();
+        void Scene(string scene)
+        {
+            Do(0.5f, () => SceneManager.LoadScene(scene));
+            Do(2.5f, ARDemo.PretendUprightMarkerFound);
+            Note("scene " + scene);
+        }
+
+        Scene("Array");
+        Note("remove from empty"); Do(0.2f, () => Arr().RemoveLastElement());
+        Note("delete at 0 on empty"); Do(0.2f, () => Arr().DeleteAt(0));
+        for (int i = 0; i < 3; i++) { Note("add"); Do(0.9f, () => Arr().AddElement(0)); }
+        Note("insert at 4 with 3 elements (gap)"); Do(0.9f, () => Arr().InsertAt(4, 0));
+        Note("insert at 3 (append)"); Do(0.9f, () => Arr().InsertAt(3, 0));
+        Note("insert at 0 (shift 4)"); Do(0.9f, () => Arr().InsertAt(0, 1));
+        Note("add when full"); Do(2.4f, () => Arr().AddElement(0));
+        Note("insert at 1 when full"); Do(0.2f, () => Arr().InsertAt(1, 0));
+        Note("delete at 4 (last)"); Do(0.2f, () => Arr().DeleteAt(4));
+        Note("delete at 0 (shift 3)"); Do(0.9f, () => Arr().DeleteAt(0));
+        Note("delete at 3 when 3 elements"); Do(1.5f, () => Arr().DeleteAt(3));
+        Note("remove last"); Do(0.2f, () => Arr().RemoveLastElement());
+
+        Scene("LinkedList");
+        Note("remove from empty"); Do(0.2f, () => Lst().RemoveLastNode());
+        Note("delete node 1 on empty"); Do(0.2f, () => Lst().DeleteAt(0));
+        Note("insert at head on empty"); Do(0.2f, () => Lst().InsertAtHead(0));
+        Note("add (1 node before)"); Do(0.6f, () => Lst().AddNode(0));
+        Note("add (2 nodes before)"); Do(0.6f, () => Lst().AddNode(0));
+        Note("insert at head (3 before)"); Do(0.6f, () => Lst().InsertAtHead(1));
+        Note("delete node 5 with 4 nodes"); Do(0.6f, () => Lst().DeleteAt(4));
+        Note("delete node 3"); Do(0.2f, () => Lst().DeleteAt(2));
+        Note("delete node 2"); Do(0.6f, () => Lst().DeleteAt(1));
+        Note("delete node 1 (head)"); Do(0.6f, () => Lst().DeleteAt(0));
+        Note("add (1 before)"); Do(0.6f, () => Lst().AddNode(0));
+        Note("remove last (2 nodes)"); Do(0.6f, () => Lst().RemoveLastNode());
+        Note("remove last (1 node)"); Do(0.6f, () => Lst().RemoveLastNode());
+        for (int i = 0; i < 5; i++) { Note("add to fill"); Do(0.6f, () => Lst().AddNode(0)); }
+        Note("add when full"); Do(0.6f, () => Lst().AddNode(0));
+        Note("insert at head when full"); Do(0.2f, () => Lst().InsertAtHead(0));
+        Note("remove last (5 nodes)"); Do(0.2f, () => Lst().RemoveLastNode());
+
+        Scene("Stack");
+        Note("push x2 onto starting 3"); Do(2.5f, () => Stk().Push(0)); Do(0.8f, () => Stk().Push(0));
+        Note("push when full"); Do(0.8f, () => Stk().Push(0));
+        for (int i = 0; i < 5; i++) { Note("pop"); Do(0.7f, () => Stk().Pop()); }
+        Note("pop when empty"); Do(0.7f, () => Stk().Pop());
+
+        Scene("queue");
+        Note("dequeue empty"); Do(0.2f, () => Que().Dequeue());
+        for (int i = 0; i < 5; i++) { Note("enqueue"); Do(1.3f, () => Que().Enqueue(0)); }
+        Note("enqueue when full"); Do(1.3f, () => Que().Enqueue(0));
+        Note("dequeue x2"); Do(0.2f, () => Que().Dequeue()); Do(0.8f, () => Que().Dequeue());
+        Note("enqueue x2 (wrap)"); Do(0.8f, () => Que().Enqueue(0)); Do(1.3f, () => Que().Enqueue(0));
+        for (int i = 0; i < 5; i++) { Note("dequeue"); Do(1.3f, () => Que().Dequeue()); }
+        Note("dequeue empty"); Do(0.8f, () => Que().Dequeue());
+        Do(0.5f, () => Debug.Log("[Check] done"));
         return list;
     }
 

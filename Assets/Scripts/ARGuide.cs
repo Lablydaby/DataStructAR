@@ -110,6 +110,9 @@ public class ARGuide : MonoBehaviour
     // The caption stays up until the next action, so students can read it at their own pace
     public void Narrate(string message, int steps, bool error)
     {
+#if UNITY_EDITOR
+        Debug.Log($"[Caption] {(error ? "ERROR" : steps + " step(s)")} | {message}");
+#endif
         if (toast == null)
             return;
         toastText.text = message;
@@ -412,6 +415,7 @@ public class ARGuide : MonoBehaviour
         card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         DK.Caps(card.transform, "HOW TO USE", 11, DK.Lavender500);
         DK.Text(card.transform, controlsHint, 17, DK.Indigo900);
+        DK.Text(card.transform, "After each action, the caption at the bottom explains what happened and counts its steps: the pointer changes, shifts or links walked it took.", 14, DK.Indigo500);
         RectTransform buttonRow = UiKit.Create("Buttons", card.transform);
         DK.Line(buttonRow.gameObject, 0, TextAnchor.MiddleRight);
         Button gotIt = DK.Pill(buttonRow, "Got it", DK.Indigo700, DK.White, 12, 15, () => howTo.SetActive(false));

@@ -49,6 +49,7 @@ public class LinkedListManager : MonoBehaviour
         if (!CanAdd(prefabIndex))
             return;
         int walked = Mathf.Max(nodes.Count - 1, 0);
+        int last = nodes.Count > 0 ? values[nodes.Count - 1] : -1;
         int value = Spawn(nodes.Count, prefabIndex);
         Relink();
         StartCoroutine(Layout(() =>
@@ -56,7 +57,9 @@ public class LinkedListManager : MonoBehaviour
             if (nodes.Count == 1)
                 ARGuide.Explain($"Added {value}. It's the head and the only node.", 1);
             else
-                ARGuide.Explain($"Added {value} at the end: walked {Links(walked)} from the head to the last node, then pointed it at the new one.", walked + 1);
+                ARGuide.Explain(walked == 0
+                    ? $"Added {value} at the end: {last} is the head and the last node, so {last} now points to {value}."
+                    : $"Added {value} at the end: walked {Links(walked)} from the head to the last node, {last}, then pointed {last} to {value}.", walked + 1);
         }));
     }
 
@@ -84,11 +87,14 @@ public class LinkedListManager : MonoBehaviour
         }
         int walked = Mathf.Max(nodes.Count - 2, 0);
         bool only = nodes.Count == 1;
+        int before = nodes.Count > 1 ? values[nodes.Count - 2] : -1;
         int value = Remove(nodes.Count - 1);
         StartCoroutine(Layout(() =>
             ARGuide.Explain(only
                 ? $"Removed {value}. The list is empty now: Head points to null."
-                : $"Removed {value} from the end: walked {Links(walked)} to the node before it and pointed that node to null.", walked + 1)));
+                : walked == 0
+                    ? $"Removed {value} from the end: the node before it is the head, {before}, so {before} now points to null."
+                    : $"Removed {value} from the end: walked {Links(walked)} from the head to {before}, the node before it, and pointed {before} to null.", walked + 1)));
     }
 
     // index is 0-based from the head
@@ -106,12 +112,15 @@ public class LinkedListManager : MonoBehaviour
             ARGuide.Say($"There's no node {index + 1}. The list has {nodes.Count} node{(nodes.Count == 1 ? "" : "s")}.");
             return;
         }
+        int before = index > 0 ? values[index - 1] : -1;
         int value = Remove(index);
         string next = index < nodes.Count ? values[index].ToString() : "null";
         StartCoroutine(Layout(() =>
             ARGuide.Explain(index == 0
                 ? $"Deleted {value}, the head. Head now points to {next}. Nothing else changed."
-                : $"Deleted {value}: walked {Links(index - 1)} to the node before it, then pointed that node to {next}.", Mathf.Max(index, 1))
+                : index == 1
+                    ? $"Deleted {value}: the node before it is the head, {before}, so {before} now points to {next}."
+                    : $"Deleted {value}: walked {Links(index - 1)} from the head to {before}, the node before it, then pointed {before} to {next}.", Mathf.Max(index, 1))
         ));
     }
 
