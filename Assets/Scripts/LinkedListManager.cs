@@ -133,8 +133,12 @@ public class LinkedListManager : MonoBehaviour
             Destroy(currentNullNode);
         }
 
+        // Null sits one step past the last node, or at the start when the list is empty
+        Node last = LastNode();
         Vector3 position = GetNextNodePosition() + startPosition.rotation * nullOffset;
         currentNullNode = Instantiate(nullNodePrefab, position, startPosition.rotation, nodeListParent.transform);
+        AttachLabel(currentNullNode, last != null ? last.transform : startPosition,
+            (last != null ? nodeSpacing : 0f) + nullOffset.x, nullOffset.y);
     }
 
 
@@ -154,11 +158,26 @@ public class LinkedListManager : MonoBehaviour
         if (currentHeadMarker == null)
         {
             currentHeadMarker = Instantiate(headMarkerPrefab, head.transform.position + startPosition.rotation * headOffset, startPosition.rotation, nodeListParent.transform);
+            AttachLabel(currentHeadMarker, head.transform, headOffset.x, headOffset.y);
         }
-        else
-        {
-            currentHeadMarker.transform.position = head.transform.position + startPosition.rotation * headOffset;
-        }
+    }
+
+    // Labels follow their node, sit above it whichever way the card faces, and turn toward the camera
+    private void AttachLabel(GameObject label, Transform follow, float alongRow, float above)
+    {
+        ARLabel arLabel = label.AddComponent<ARLabel>();
+        arLabel.follow = follow;
+        arLabel.marker = startPosition;
+        arLabel.alongRow = alongRow;
+        arLabel.above = above;
+    }
+
+    private Node LastNode()
+    {
+        Node current = head;
+        while (current != null && current.next != null)
+            current = current.next;
+        return current;
     }
 
 

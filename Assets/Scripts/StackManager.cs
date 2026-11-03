@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Vuforia;
 
 public class StackManager : MonoBehaviour
 {
@@ -33,29 +32,39 @@ public class StackManager : MonoBehaviour
     private Quaternion StackRotation => Quaternion.FromToRotation(startPos.up, StackUp) * startPos.rotation;
 
 
-    void Start()
+    private bool initialStackDone;
+
+    void Awake()
     {
         stackAxisLocal = Anchor.InverseTransformDirection(startPos.up);
-
-        // Spawn the initial stack
-        StartCoroutine(SpawnInitialStack());
     }
 
+    // The Stack scene switches this object off whenever the marker is lost, which stops every running
+    // animation and cooldown. Finish them instantly when it comes back, so Push and Pop keep working.
+    void OnEnable()
+    {
+        isPushOnCooldown = false;
+        isPopOnCooldown = false;
+
+        foreach (GameObject obj in moving)
+        {
+            if (obj != null && !stackObjects.Contains(obj))
+                Destroy(obj); // Was being popped
+        }
+        moving.Clear();
+        for (int i = 0; i < stackObjects.Count; i++)
+            stackObjects[i].transform.localPosition = RestLocalPosition(i);
+
+        // Spawn the initial stack, or finish it if tracking was lost partway
+        if (!initialStackDone)
+            StartCoroutine(SpawnInitialStack());
+    }
+
+    // While the marker is lost the stack is hidden, so it simply re-picks its axis once tracking resumes
     void Update()
     {
-        if (!IsMarkerTracked())
-            return;
-
-        Vector3 up = WorldUp();
-        Vector3 best = StackUp;
-        foreach (Vector3 axis in new[] { startPos.up, startPos.forward, -startPos.forward, startPos.right, -startPos.right })
-        {
-            if (Vector3.Dot(axis, up) > Vector3.Dot(best, up))
-                best = axis;
-        }
-
-        // Some slack so the stack doesn't flip back and forth when the card is tilted halfway
-        if (Vector3.Dot(best, up) > Vector3.Dot(StackUp, up) + 0.2f)
+        Vector3 best = ARUp.ClosestMarkerAxis(startPos, StackUp);
+        if (best != StackUp)
         {
             stackAxisLocal = Anchor.InverseTransformDirection(best);
             for (int i = 0; i < stackObjects.Count; i++)
@@ -71,12 +80,13 @@ public class StackManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
 
-        for (int i = 0; i < 3; i++)
+        while (stackObjects.Count < 3)
         {
             // Wait out the push cooldown so each initial push goes through
             yield return new WaitWhile(() => isPushOnCooldown);
-            Push(i);
+            Push(stackObjects.Count);
         }
+        initialStackDone = true;
     }
 
     public void Push(int selectedIndex)
@@ -171,31 +181,6 @@ public class StackManager : MonoBehaviour
         height += stackObjects[index].transform.lossyScale.y / 2;
 
         return Anchor.InverseTransformPoint(startPos.position + StackUp * height);
-    }
-
-    private bool IsMarkerTracked()
-    {
-        ObserverBehaviour observer = Anchor.GetComponent<ObserverBehaviour>();
-        if (observer == null)
-            return true;
-        Status status = observer.TargetStatus.Status;
-        return status == Status.TRACKED || status == Status.EXTENDED_TRACKED;
-    }
-
-    // Real-world up from the phone's gravity sensor, in world space.
-    // Falls back to the camera's up where there is no accelerometer, e.g. in the editor.
-    private static Vector3 WorldUp()
-    {
-        Camera camera = Camera.main;
-        if (camera == null)
-            return Vector3.up;
-
-        // Already adjusted to the screen orientation (Input.compensateSensors); +z is out of the screen
-        Vector3 gravity = Input.acceleration;
-        if (gravity.sqrMagnitude < 0.01f)
-            return camera.transform.up;
-
-        return -camera.transform.TransformDirection(new Vector3(gravity.x, gravity.y, -gravity.z)).normalized;
     }
 
     // Slides a pushed object onto its resting spot, re-read each frame in case the stack turns

@@ -18,13 +18,13 @@ public static class UIUpgrade
     {
         UpgradeMainMenu();
         AddARGuide("Assets/Scenes/AR/Array.unity", "Array",
-            "Pick a shape, then tap Add to fill the next slot or Remove to empty the last one. Tap Next when you're ready for the quiz.");
+            "Pick a shape, then tap Add to fill the next slot or Remove to empty the last one. Tap Go to Quiz when you're ready.");
         AddARGuide("Assets/Scenes/AR/LinkedList.unity", "Linked List",
-            "Pick a shape, then tap Add to attach a node or Remove to delete the last one. Tap Next when you're ready for the quiz.");
+            "Pick a shape, then tap Add to attach a node or Remove to delete the last one. Tap Go to Quiz when you're ready.");
         AddARGuide("Assets/Scenes/AR/Stack.unity", "Stack",
-            "Pick a shape, then tap Push to add it on top or Pop to remove the top block. Tap Next when you're ready for the quiz.");
+            "Pick a shape, then tap Push to add it on top or Pop to remove the top block. Tap Go to Quiz when you're ready.");
         AddARGuide("Assets/Scenes/AR/queue.unity", "Queue",
-            "Pick a shape, then tap Enqueue to add it at the rear or Dequeue to remove the front. Tap Next when you're ready for the quiz.");
+            "Pick a shape, then tap Enqueue to add it at the rear or Dequeue to remove the front. Tap Go to Quiz when you're ready.");
         Debug.Log("[UIUpgrade] Done.");
     }
 

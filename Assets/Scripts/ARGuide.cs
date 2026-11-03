@@ -120,6 +120,10 @@ public class ARGuide : MonoBehaviour
         hintPanel = hint.gameObject;
 
         hintText = UiKit.Text(hint.transform, controlsHint, "Poppins-Regular SDF", 34, Color.white, TextAlignmentOptions.Center);
+        // Some hints run to three lines; shrink them to fit rather than spill out of the panel
+        hintText.enableAutoSizing = true;
+        hintText.fontSizeMin = 20;
+        hintText.fontSizeMax = 34;
         UiKit.Stretch(hintText.rectTransform, new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.92f));
     }
 }

@@ -1808,7 +1808,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   topicName: Linked List
   controlsHint: Pick a shape, then tap Add to attach a node or Remove to delete the
-    last one. Tap Next when you're ready for the quiz.
+    last one. Tap Go to Quiz when you're ready.
   hintDuration: 6
 --- !u!4 &1333766596
 Transform:

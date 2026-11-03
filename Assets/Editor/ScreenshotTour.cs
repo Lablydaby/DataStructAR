@@ -33,9 +33,16 @@ public static class ScreenshotTour
     private const string FolderKey = "ScreenshotTour.Folder";
     private const string QueueOverflowMode = "QueueOverflow";
 
+    private const string UprightMarkersMode = "UprightMarkers";
+
     private static List<(float wait, Action action)> steps;
     private static List<(float wait, Action action)> Steps =>
-        steps ??= SessionState.GetString(ModeKey, "") == QueueOverflowMode ? BuildQueueOverflowSteps() : BuildSteps();
+        steps ??= SessionState.GetString(ModeKey, "") switch
+        {
+            QueueOverflowMode => BuildQueueOverflowSteps(),
+            UprightMarkersMode => BuildUprightMarkerSteps(),
+            _ => BuildSteps(),
+        };
 
     // Play mode reloads scripts, so the tour's progress lives in SessionState and resumes here
     static ScreenshotTour()
@@ -76,6 +83,46 @@ public static class ScreenshotTour
     {
         SessionState.SetBool(QuitKey, true);
         RunQueueOverflow();
+    }
+
+    // Linked list and stack with the marker upright (on a monitor or wall), viewed head-on
+    [MenuItem("Build/Capture Upright Markers")]
+    public static void RunUprightMarkers()
+    {
+        Start(UprightMarkersMode, OutputFolder + "/UprightMarkers", "Assets/Scenes/AR/LinkedList.unity", PortraitHeight, PortraitWidth);
+    }
+
+    public static void RunUprightMarkersAndQuit()
+    {
+        SessionState.SetBool(QuitKey, true);
+        RunUprightMarkers();
+    }
+
+    private static List<(float, Action)> BuildUprightMarkerSteps()
+    {
+        List<(float, Action)> list = new List<(float, Action)>();
+        void Do(float wait, Action action) => list.Add((wait, action));
+        void Shot(float wait, string name) => Do(wait, () => Capture(name));
+
+        Do(0.1f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
+        Do(3f, ARDemo.PretendUprightMarkerFound);
+        for (int i = 0; i < 3; i++)
+        {
+            int shape = i;
+            Do(0.4f, () =>
+            {
+                LinkedListManager list = Object.FindObjectOfType<LinkedListManager>();
+                list.AddNode(shape % list.nodePrefabs.Length);
+            });
+        }
+        Do(0.8f, ARDemo.FrameUpright);
+        Shot(0.3f, "linkedlist-upright");
+
+        Do(0.5f, () => SceneManager.LoadScene("Stack"));
+        Do(1f, ARDemo.PretendUprightMarkerFound);
+        Do(3f, ARDemo.FrameUpright);
+        Shot(0.3f, "stack-upright");
+        return list;
     }
 
     private static void Start(string mode, string folder, string scenePath, int width, int height)
