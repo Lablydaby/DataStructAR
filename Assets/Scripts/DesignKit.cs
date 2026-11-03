@@ -56,6 +56,21 @@ public static class DK
 
     // A circle texture used 9-sliced: its corners become any radius via pixelsPerUnitMultiplier
     public static Sprite Round => round ??= MakeSprite(RoundSize, (x, y) => Circle(x, y, RoundSize), RoundBorder);
+
+    // Hollow version of Round: a band about 0.4 x the corner radius thick, used for highlight outlines
+    private static Sprite outlineRound;
+    public static Sprite OutlineRound => outlineRound ??= MakeSprite(RoundSize, (x, y) =>
+    {
+        float d = Circle(x, y, RoundSize);
+        return Mathf.Min(d, 12f - d);
+    }, RoundBorder);
+
+    public static Image Ring(Transform parent, Color color, float radius, string name = "Ring")
+    {
+        Image image = Box(parent, color, radius, name);
+        image.sprite = OutlineRound;
+        return image;
+    }
     public static Sprite Star => star ??= MakeSprite(128, (x, y) => StarDistance(x, y, 128), 0);
     public static Sprite StarOutline => starOutline ??= MakeSprite(128, (x, y) => 4f - Mathf.Abs(StarDistance(x, y, 128)), 0);
 
