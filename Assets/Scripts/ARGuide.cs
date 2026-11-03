@@ -88,6 +88,7 @@ public class ARGuide : MonoBehaviour
             return;
         int n = count();
         countText.text = $"{n}/{capacity}";
+        FollowEnd();
         addGroup.alpha = n >= capacity ? 0.45f : 1f;
         removeGroup.alpha = n <= 0 ? 0.45f : 1f;
     }
@@ -251,14 +252,20 @@ public class ARGuide : MonoBehaviour
         row.padding = new RectOffset(4, 4, 4, 4);
         bar.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        Button add = DK.Pill(bar.transform, labels[0], DK.Indigo700, DK.White, 10, 16, () => originalAdd?.onClick.Invoke(), "plus");
-        DK.Size(add, labels[0].Length * 10 + 64, 44);
-        addGroup = DK.Get<CanvasGroup>(add);
-        controlRefs["add"] = (RectTransform)add.transform;
-        Button remove = DK.Pill(bar.transform, labels[1], DK.Clear, DK.Indigo900, 10, 16, () => originalRemove?.onClick.Invoke(), "minus");
-        DK.Size(remove, labels[1].Length * 10 + 64, 44);
-        removeGroup = DK.Get<CanvasGroup>(remove);
-        controlRefs["remove"] = (RectTransform)remove.transform;
+        // Array and linked list: pick a position, then Insert or Delete there. Stack and queue keep their two operations.
+        if (topicName == "Array" || topicName == "Linked List")
+            BuildPositionControls(bar.transform);
+        else
+        {
+            Button add = DK.Pill(bar.transform, labels[0], DK.Indigo700, DK.White, 10, 16, () => originalAdd?.onClick.Invoke(), "plus");
+            DK.Size(add, labels[0].Length * 10 + 64, 44);
+            addGroup = DK.Get<CanvasGroup>(add);
+            controlRefs["add"] = (RectTransform)add.transform;
+            Button remove = DK.Pill(bar.transform, labels[1], DK.Clear, DK.Indigo900, 10, 16, () => originalRemove?.onClick.Invoke(), "minus");
+            DK.Size(remove, labels[1].Length * 10 + 64, 44);
+            removeGroup = DK.Get<CanvasGroup>(remove);
+            controlRefs["remove"] = (RectTransform)remove.transform;
+        }
 
         Image divider = DK.Box(bar.transform, DK.Lavender300, 0, "Divider");
         DK.Size(divider, 1, 28);
@@ -267,9 +274,6 @@ public class ARGuide : MonoBehaviour
         DK.Caps(counter, countLabel, 10, DK.Lavender500);
         countText = DK.Text(counter, "0/5", 17, DK.Indigo900, true);
         countText.enableWordWrapping = false;
-
-        if (topicName == "Array" || topicName == "Linked List")
-            BuildPositionRow(group);
 
         // Before the shape picker, so its open list draws over the mission card
         missions = gameObject.AddComponent<ARMissions>();
@@ -296,70 +300,111 @@ public class ARGuide : MonoBehaviour
     public string MissionStatus => missions != null ? missions.Status : "";
     public void NextMission() => missions?.OnNext();
 
-    // Array: pick an index, then insert or delete there. Linked list: insert at the head, or delete node N.
-    private void BuildPositionRow(RectTransform group)
+    // ---- Position stepper (array index / linked-list node) ----
+    // The position starts on "end" and follows it as items come and go, so Insert and Delete work at the
+    // end until the student moves it: Insert then fills the next free slot and Delete empties the last one.
+
+    private bool atEnd = true;
+    private bool IsArray => topicName == "Array";
+    private int MinPosition => IsArray ? 0 : 1;
+    private int EndPosition => (count != null ? count() : 0) + (IsArray ? 0 : 1);
+
+    private void BuildPositionControls(Transform bar)
     {
-        bool array = topicName == "Array";
-        Image bar = DK.Box(group, DK.White, 14, "Position");
-        DK.At(bar, 82, 80, 0, 52);
-        HorizontalLayoutGroup row = DK.Line(bar.gameObject, 4);
-        row.padding = new RectOffset(4, 4, 4, 4);
-        bar.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        if (!array)
-        {
-            Button head = DK.Pill(bar.transform, "Insert at head", DK.Indigo700, DK.White, 10, 15,
-                () => FindObjectOfType<LinkedListManager>()?.InsertAtHead(Shape), "plus");
-            DK.Size(head, 168, 44);
-            controlRefs["head"] = (RectTransform)head.transform;
-            Image divider = DK.Box(bar.transform, DK.Lavender300, 0, "Divider");
-            DK.Size(divider, 1, 28);
-        }
-
-        position = array ? 0 : 1;
-        Button less = DK.Pill(bar.transform, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(-1), "minus");
+        Button less = DK.Pill(bar, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(-1), "minus");
         DK.Size(less, 40, 44);
         controlRefs["index-minus"] = (RectTransform)less.transform;
-        RectTransform labelCell = UiKit.Create("Position", bar.transform);
+        RectTransform labelCell = UiKit.Create("Position", bar);
         DK.Column(labelCell.gameObject, 2, new RectOffset(4, 4, 6, 0), TextAnchor.UpperCenter).childForceExpandWidth = false;
-        DK.Caps(labelCell, array ? "INDEX" : "NODE", 10, DK.Lavender500, TextAlignmentOptions.Center);
+        DK.Caps(labelCell, IsArray ? "INDEX" : "NODE", 10, DK.Lavender500, TextAlignmentOptions.Center);
         positionText = DK.Text(labelCell, "", 17, DK.Indigo900, true, TextAlignmentOptions.Center);
-        DK.Size(positionText, 44, -1);
-        Button more = DK.Pill(bar.transform, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(1), "plus");
+        DK.Size(positionText, 48, -1);
+        Button more = DK.Pill(bar, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(1), "plus");
         DK.Size(more, 40, 44);
         controlRefs["index-plus"] = (RectTransform)more.transform;
-        Step(0);
 
-        if (array)
-        {
-            Button insert = DK.Pill(bar.transform, "Insert at", DK.Indigo700, DK.White, 10, 15,
-                () => FindObjectOfType<ArrayManager>()?.InsertAt(position, Shape));
-            DK.Size(insert, 104, 44);
-            controlRefs["insert"] = (RectTransform)insert.transform;
-        }
-        Button delete = DK.Pill(bar.transform, array ? "Delete at" : "Delete", DK.Clear, DK.Indigo900, 10, 15,
-            () =>
-            {
-                if (array) FindObjectOfType<ArrayManager>()?.DeleteAt(position);
-                else FindObjectOfType<LinkedListManager>()?.DeleteAt(position - 1);
-            }, "minus");
-        DK.Size(delete, array ? 116 : 100, 44);
+        Button insert = DK.Pill(bar, "Insert", DK.Indigo700, DK.White, 10, 16, Insert, "plus");
+        DK.Size(insert, 112, 44);
+        addGroup = DK.Get<CanvasGroup>(insert);
+        controlRefs["insert"] = (RectTransform)insert.transform;
+        Button delete = DK.Pill(bar, "Delete", DK.Clear, DK.Indigo900, 10, 16, Delete, "minus");
+        DK.Size(delete, 112, 44);
+        removeGroup = DK.Get<CanvasGroup>(delete);
         controlRefs["delete"] = (RectTransform)delete.transform;
+
+        position = EndPosition;
+        ShowPosition();
     }
 
     private void Step(int delta)
     {
-        int min = topicName == "Array" ? 0 : 1;
-        int max = min + capacity - 1;
-        position = Mathf.Clamp(position + delta, min, max);
-        positionText.text = position.ToString();
+        position = Mathf.Clamp(position + delta, MinPosition, EndPosition);
+        atEnd = position == EndPosition;
+        ShowPosition();
+    }
+
+    // Keeps the position on "end" (or within range) as the structure grows and shrinks
+    private void FollowEnd()
+    {
+        if (positionText == null)
+            return;
+        int end = EndPosition;
+        int wanted = atEnd ? end : Mathf.Min(position, end);
+        if (wanted != position)
+        {
+            position = wanted;
+            atEnd = position == end;
+            ShowPosition();
+        }
+    }
+
+    private void ShowPosition()
+    {
+        positionText.text = position == EndPosition ? "end" : position.ToString();
+    }
+
+    private void Insert()
+    {
+        int shape = Shape;
+        if (IsArray)
+        {
+            ArrayManager array = FindObjectOfType<ArrayManager>();
+            if (atEnd) array.AddElement(shape);
+            else array.InsertAt(position, shape);
+        }
+        else
+        {
+            LinkedListManager list = FindObjectOfType<LinkedListManager>();
+            if (atEnd) list.AddNode(shape);
+            else list.InsertAt(position - 1, shape);
+        }
+    }
+
+    private void Delete()
+    {
+        if (IsArray)
+        {
+            ArrayManager array = FindObjectOfType<ArrayManager>();
+            if (atEnd) array.RemoveLastElement();
+            else array.DeleteAt(position);
+        }
+        else
+        {
+            LinkedListManager list = FindObjectOfType<LinkedListManager>();
+            if (atEnd) list.RemoveLastNode();
+            else list.DeleteAt(position - 1);
+        }
     }
 
     // For the screenshot tool
+    public void PressInsert() => Insert();
+    public void PressDelete() => Delete();
+
     public void SetPosition(int value)
     {
         position = value;
-        Step(0);
+        atEnd = position == EndPosition;
+        ShowPosition();
     }
 
     private void BuildShapePicker(RectTransform group)

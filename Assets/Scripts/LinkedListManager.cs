@@ -78,6 +78,31 @@ public class LinkedListManager : MonoBehaviour
                 : $"Inserted {value} at the head: it points to the old head ({oldHead}), and Head moves to it. The other nodes only slid over on screen.", 1)));
     }
 
+    // Inserts so the new node becomes the node at `index` (0-based): 0 is the head, Count is the end
+    public void InsertAt(int index, int prefabIndex)
+    {
+        if (index <= 0)
+        {
+            InsertAtHead(prefabIndex);
+            return;
+        }
+        if (index >= nodes.Count)
+        {
+            AddNode(prefabIndex);
+            return;
+        }
+        if (!CanAdd(prefabIndex))
+            return;
+        int before = values[index - 1], after = values[index];
+        int value = Spawn(index, prefabIndex);
+        Relink();
+        ARGuide.Record("insert", index);
+        StartCoroutine(Layout(() =>
+            ARGuide.Explain(index == 1
+                ? $"Inserted {value} as node 2: the node before it is the head, {before}, so {before} now points to {value} and {value} points to {after}."
+                : $"Inserted {value} as node {index + 1}: walked {Links(index - 1)} from the head to {before}, then pointed {before} to {value} and {value} to {after}.", index)));
+    }
+
     public void RemoveLastNode()
     {
         if (isBusy)

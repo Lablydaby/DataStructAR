@@ -120,31 +120,31 @@ public class ARMissions : MonoBehaviour
         {
             case "Array":
                 Add("Fill the array up to index 2.",
-                    "Tap <b>Add</b> until indexes 0, 1 and 2 are filled.",
-                    "Adding at the end never moves anything else, so each Add takes 1 step.",
-                    new[] { "add" }, (op, i) => Items() >= 3, () => (Mathf.Min(Items(), 3), 3));
+                    "With INDEX on <b>end</b>, tap <b>Insert</b> until indexes 0, 1 and 2 are filled.",
+                    "Inserting at the end never moves anything else, so each one takes 1 step.",
+                    new[] { "insert" }, (op, i) => Items() >= 3, () => (Mathf.Min(Items(), 3), 3));
                 Add("Insert a value at index 0.",
-                    "Set <b>INDEX</b> to 0, then tap <b>Insert at</b>. Watch the step count.",
+                    "Move <b>INDEX</b> to 0 with the minus button, then tap <b>Insert</b>. Watch the step count.",
                     "Every element moved one slot right to make room, so inserting at the front takes n steps: O(n).",
-                    new[] { "index", "insert" }, (op, i) => op == "insert" && i == 0);
+                    new[] { "index-minus", "insert" }, (op, i) => op == "insert" && i == 0);
                 Add("Delete the element at index 1.",
-                    "Set <b>INDEX</b> to 1, then tap <b>Delete at</b>.",
+                    "Move <b>INDEX</b> to 1, then tap <b>Delete</b>.",
                     "The elements after index 1 shifted left to close the gap, so deleting from the middle is O(n) too.",
-                    new[] { "index", "delete" }, (op, i) => op == "delete" && i == 1);
+                    new[] { "index-minus", "delete" }, (op, i) => op == "delete" && i == 1);
                 break;
             case "Linked List":
                 Add("Build a list of 3 nodes.",
-                    "Tap <b>Add</b> until there are 3 nodes. Watch the step count grow with each one.",
-                    "Each Add walks every link from the head to reach the end, so it gets slower as the list grows: O(n).",
-                    new[] { "add" }, (op, i) => op == "add" && Items() >= 3, () => (Mathf.Min(Items(), 3), 3));
+                    "With NODE on <b>end</b>, tap <b>Insert</b> until there are 3 nodes. Watch the step count grow.",
+                    "Inserting at the end walks every link from the head first, so it gets slower as the list grows: O(n).",
+                    new[] { "insert" }, (op, i) => op == "add" && Items() >= 3, () => (Mathf.Min(Items(), 3), 3));
                 Add("Insert a node at the head.",
-                    "Tap <b>Insert at head</b>.",
+                    "Move <b>NODE</b> to 1 (the head), then tap <b>Insert</b>.",
                     "Only one pointer changed: the new node points to the old head. That's why inserting at the head is O(1).",
-                    new[] { "head" }, (op, i) => op == "insert-head");
+                    new[] { "index-minus", "insert" }, (op, i) => op == "insert-head");
                 Add("Delete node 2.",
-                    "Set <b>NODE</b> to 2, then tap <b>Delete</b>. Count the links walked.",
+                    "Move <b>NODE</b> to 2, then tap <b>Delete</b>. Count the links walked.",
                     "The list walked to the node before it and pointed that node past node 2. Nothing else moved.",
-                    new[] { "index", "delete" }, (op, i) => op == "delete" && i == 1);
+                    new[] { "index-minus", "delete" }, (op, i) => op == "delete" && i == 1);
                 break;
             case "Stack":
                 Add("Push until the stack is full.",

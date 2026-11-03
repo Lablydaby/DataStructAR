@@ -31,4 +31,4 @@ They are the building blocks of stacks, queues and some hash tables, and memory 
 > - The last node points to null.
 
 # Try it in AR
-Point your camera at the **Linked List** marker card. Tap **Add** to attach a new node at the end and **Remove** to delete the last one. Tap **Insert at head** to add a node in one step, or pick a **node** and tap **Delete** to unlink it. Watch the Head and Null labels move.
+Point your camera at the **Linked List** marker card. Pick a **node** position, then tap **Insert** or **Delete**. Node 1 is the head and **end** is after the last node. Watch the Head and Null labels move, and compare the steps at the head, in the middle and at the end.

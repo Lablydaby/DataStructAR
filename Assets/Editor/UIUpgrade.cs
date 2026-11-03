@@ -18,9 +18,9 @@ public static class UIUpgrade
     {
         UpgradeMainMenu();
         AddARGuide("Assets/Scenes/AR/Array.unity", "Array",
-            "Pick a shape, then tap Add to fill the next slot or Remove to empty the last one. Pick an index to Insert at or Delete at, and watch the elements shift. Tap Go to Quiz when you're ready.");
+            "Pick a shape and an INDEX, then tap Insert or Delete. On end, Insert fills the next free slot and Delete empties the last one; in the middle, watch the elements shift. Tap Go to Quiz when you're ready.");
         AddARGuide("Assets/Scenes/AR/LinkedList.unity", "Linked List",
-            "Pick a shape, then tap Add to attach a node at the end or Insert at head to add one at the front. Pick a node number and tap Delete to unlink it. Tap Go to Quiz when you're ready.");
+            "Pick a shape and a NODE, then tap Insert or Delete. Node 1 is the head, and end is after the last node. Tap Go to Quiz when you're ready.");
         AddARGuide("Assets/Scenes/AR/Stack.unity", "Stack",
             "Pick a shape, then tap Push to add it on top or Pop to remove the top block. Tap Go to Quiz when you're ready.");
         AddARGuide("Assets/Scenes/AR/queue.unity", "Queue",

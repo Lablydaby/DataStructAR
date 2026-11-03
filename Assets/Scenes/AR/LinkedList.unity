@@ -1807,7 +1807,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topicName: Linked List
-  controlsHint: 'Pick a shape, then tap Add to attach a node at the end or Insert at head to add one at the front. Pick a node number and tap Delete to unlink it. Tap Go to Quiz when you''re ready.'
+  controlsHint: 'Pick a shape and a NODE, then tap Insert or Delete. Node 1 is the head, and end is after the last node. Tap Go to Quiz when you''re ready.'
   hintDuration: 6
 --- !u!4 &1333766596
 Transform:

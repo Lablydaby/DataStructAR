@@ -236,34 +236,39 @@ public static class ScreenshotTour
         void Mission() => Do(0.05f, () => Debug.Log("[Mission] " + Object.FindObjectOfType<ARGuide>().MissionStatus));
         void Next() => Do(0.4f, () => Object.FindObjectOfType<ARGuide>().NextMission());
         void Shot(float wait, string name) => Do(wait, () => Capture(name));
+        ARGuide Guide() => Object.FindObjectOfType<ARGuide>();
         void Start(string scene)
         {
             Scene(scene);
-            Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
+            Do(0.2f, () => Guide().DismissHowTo());
             Mission();
         }
 
+        // Array, through the one-row controls: Insert on end x3, then index 0 Insert, index 1 Delete
         Start("Array");
-        Do(0.9f, () => Arr().AddElement(0));
+        Do(0.3f, () => Guide().PressInsert());
         Do(0.2f, ARDemo.FrameUpright);
         Shot(1.0f, "array-mission-1-progress");
-        Do(0.2f, () => Arr().AddElement(0)); Do(0.9f, () => Arr().AddElement(0));
+        Do(0.2f, () => Guide().PressInsert()); Do(0.9f, () => Guide().PressInsert());
         Shot(1.0f, "array-mission-1-complete"); Mission(); Next(); Mission();
         Shot(0.3f, "array-mission-2-highlight");
-        Do(0.2f, () => Arr().InsertAt(0, 1));
+        Do(0.2f, () => { Guide().SetPosition(0); Guide().PressInsert(); });
         Do(2.0f, () => { }); Mission(); Next();
-        Do(0.2f, () => Arr().DeleteAt(1));
+        Do(0.2f, () => { Guide().SetPosition(1); Guide().PressDelete(); });
         Do(1.6f, () => { }); Mission(); Next(); Mission();
         Shot(0.3f, "array-missions-done");
 
+        // Linked list: Insert on end x3, node 1 Insert (head), node 3 Insert (middle), node 2 Delete
         Start("LinkedList");
-        for (int i = 0; i < 3; i++) Do(0.6f, () => Lst().AddNode(0));
+        for (int i = 0; i < 3; i++) Do(0.6f, () => Guide().PressInsert());
         Do(0.5f, () => { }); Mission(); Next(); Mission();
         Do(0.2f, ARDemo.FrameUpright);
         Shot(0.3f, "linkedlist-mission-2-highlight");
-        Do(0.2f, () => Lst().InsertAtHead(1));
+        Do(0.2f, () => { Guide().SetPosition(1); Guide().PressInsert(); });
         Do(0.8f, () => { }); Mission(); Next();
-        Do(0.2f, () => Lst().DeleteAt(1));
+        Do(0.2f, () => { Guide().SetPosition(3); Guide().PressInsert(); });
+        Shot(1.0f, "linkedlist-insert-middle");
+        Do(0.2f, () => { Guide().SetPosition(2); Guide().PressDelete(); });
         Do(0.8f, () => { }); Mission();
         // A narrower 16:9 phone: everything should still fit
         Do(0.2f, () => SetGameViewSize(1280, 720));
