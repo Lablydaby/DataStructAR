@@ -150,7 +150,7 @@ public class InsertValueManager : MonoBehaviour
             yield break;
         }
 
-        string goal = value == rightValue ? $"{rightValue} belongs at index {rightIndex}." : $"The task is to insert {rightValue} at index {rightIndex}.";
+        string goal = value == rightValue ? $"{rightValue} belongs at index {rightIndex}." : $"the task is to insert {rightValue} at index {rightIndex}.";
         ShowFeedback($"{shiftNote} But {goal} Try again.");
         yield return new WaitForSeconds(3f);
 
