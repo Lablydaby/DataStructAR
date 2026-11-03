@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class QueueManager : MonoBehaviour
@@ -14,6 +14,8 @@ public class QueueManager : MonoBehaviour
     private GameObject[] elements;
     private GameObject[] spaces;
     private int queueCapacity = 5;
+    public int Count => rear;
+    public int Capacity => queueCapacity;
     private int front = 0;
     private int rear = 0;
     private bool isBusy = false;

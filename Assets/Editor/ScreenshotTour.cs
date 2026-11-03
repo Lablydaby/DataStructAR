@@ -26,7 +26,6 @@ public static class ScreenshotTour
     private const int PortraitWidth = 720;
     private const int PortraitHeight = 1520;
 
-    private static readonly string[] CategoryButtons = { "ArrayBtn", "LinkedListBtn", "StackBtn", "QueueBtn" };
     private static readonly string[] CategorySlugs = { "array", "linkedlist", "stack", "queue" };
 
     private const string ModeKey = "ScreenshotTour.Mode";
@@ -118,6 +117,9 @@ public static class ScreenshotTour
         {
             Do(0.5f, () => SceneManager.LoadScene(scene));
             Do(2.5f, ARDemo.PretendUprightMarkerFound);
+            if (slug == "array")
+                Shot(0.5f, "array-howto");
+            Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
             // Fill to the 5-item maximum, so the layout is checked at its largest
             for (int i = 0; i < 5; i++)
             {
@@ -127,6 +129,11 @@ public static class ScreenshotTour
             Do(2.5f, ARDemo.FrameUpright);
             Do(0.1f, () => ARDemo.LogContentBounds(scene));
             Shot(0.3f, slug + "-upright");
+            if (slug == "stack")
+            {
+                Do(0.3f, () => Object.FindObjectOfType<StackManager>().Push(0));
+                Shot(0.4f, "stack-overflow-toast");
+            }
         }
         return list;
     }
@@ -184,14 +191,16 @@ public static class ScreenshotTour
         Click(0.5f, "Splash2/BG/NextButton");
         Shot(1f, "menu");
 
-        for (int i = 0; i < CategoryButtons.Length; i++)
+        AppScreens Screens() => Object.FindObjectOfType<AppScreens>();
+        QuizManager Quiz() => Object.FindObjectOfType<QuizManager>();
+        for (int i = 0; i < QuizManager.Topics.Length; i++)
         {
-            string slug = CategorySlugs[i];
+            string slug = CategorySlugs[i], topic = QuizManager.Topics[i];
 
-            Click(i == 0 ? 0.5f : 3f, "Options/BG/" + CategoryButtons[i]);
+            Do(i == 0 ? 0.5f : 3f, () => Screens().SelectTopic(topic));
             if (i == 0)
                 Shot(0.5f, "menu-selected");
-            Click(0.3f, "Options/BG/ShowInfo");
+            Do(0.3f, () => Screens().ShowLesson());
             Shot(1f, slug + "-info");
             Do(0.2f, () => ScrollLesson(0.6f));
             Shot(0.5f, slug + "-info-middle");
@@ -199,39 +208,53 @@ public static class ScreenshotTour
             Shot(0.5f, slug + "-info-end");
 
             Do(0.3f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
-            Click(0.5f, "Info/BG/StartARButton");
+            Do(0.5f, () => Quiz().LoadARScene());
             Shot(5f, slug + "-ar");
 
             // Same as the AR scene's back-to-quiz button
             Do(0.5f, () => ReturnToMenu(1));
             Shot(3f, slug + "-quiz");
-            Click(0.2f, "Quiz/BG/Question1");
+            Do(0.2f, () => Screens().Pick(0));
             Shot(0.4f, slug + "-quiz-feedback");
-            // A second tap dismisses each explanation
-            Click(0.3f, "Quiz/BG/Question1");
+            Do(0.3f, () => Screens().NextQuestion());
             for (int q = 1; q < 5; q++)
             {
-                Click(0.4f, "Quiz/BG/Question1");
-                Click(0.6f, "Quiz/BG/Question1");
+                Do(0.3f, () => Screens().Pick(0));
+                Do(0.4f, () => Screens().NextQuestion());
             }
-            Shot(1.5f, slug + "-quiz-finished");
-            Click(0.3f, "Quiz/BG/Done");
+            Shot(1f, slug + "-quiz-finished");
+            Do(0.3f, () => Screens().ShowResult());
             Shot(1f, slug + "-result");
 
             Do(0.3f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
-            Click(0.3f, "Result/BG/Next");
+            Do(0.3f, () => Quiz().OpenPractice());
             Shot(1.5f, slug + "-practice");
             if (i == 0)
             {
-                Do(0.2f, () => TypeArrayInsert("1", "45"));
+                Do(0.2f, () => Object.FindObjectOfType<ArrayPuzzle>().TypeAndInsert("1", "45"));
                 Shot(0.45f, "array-practice-shifting");
                 Shot(1.2f, "array-practice-wrong");
-                Do(3f, () => TypeArrayInsert("3", "45"));
+                Do(3f, () => Object.FindObjectOfType<ArrayPuzzle>().TypeAndInsert("3", "45"));
                 Shot(1.2f, "array-practice-correct");
+            }
+            else if (i == 1)
+            {
+                Do(0.2f, () => SolveLinkedList());
+                Shot(1.2f, "linkedlist-practice-solved");
+            }
+            else if (i == 2)
+            {
+                Do(0.2f, () => Object.FindObjectOfType<StackPuzzle>().Press("W"));
+                Shot(0.4f, "stack-practice-overflow");
+            }
+            else
+            {
+                Do(0.2f, () => Object.FindObjectOfType<QueuePuzzle>().Press("7"));
+                Shot(0.4f, "queue-practice-overflow");
             }
 
             // Same as the AR scene's exit button, which returns to the topic menu
-            Do(0.5f, () => ReturnToMenu(2));
+            Do(3.5f, () => ReturnToMenu(2));
         }
 
         Shot(2f, "menu-progress");
@@ -239,12 +262,18 @@ public static class ScreenshotTour
         return steps;
     }
 
-    private static void TypeArrayInsert(string index, string value)
+    // Swaps nodes into A, B, C, D order one pair at a time
+    private static void SolveLinkedList()
     {
-        InsertValueManager insert = Object.FindObjectOfType<InsertValueManager>();
-        insert.indexInput.text = index;
-        insert.valueInput.text = value;
-        insert.OnInsertButtonClicked();
+        LinkedListPuzzle puzzle = Object.FindObjectOfType<LinkedListPuzzle>();
+        string[] order = puzzle.Order;
+        for (int i = 0; i < order.Length; i++)
+        {
+            int at = System.Array.IndexOf(order, ((char)('A' + i)).ToString());
+            if (at != i)
+                puzzle.Swap(i, at);
+            order = puzzle.Order;
+        }
     }
 
     // So the menu's saved-progress labels start from scratch on every tour
@@ -314,8 +343,7 @@ public static class ScreenshotTour
     {
         foreach (ScrollRect scroll in Object.FindObjectsOfType<ScrollRect>())
         {
-            if (scroll.name == "Scroll View")
-                scroll.verticalNormalizedPosition = normalizedPosition;
+            scroll.verticalNormalizedPosition = normalizedPosition;
         }
     }
 

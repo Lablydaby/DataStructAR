@@ -9,6 +9,8 @@ public class LinkedListManager : MonoBehaviour
     private Node head;
     public GameObject nodeListParent; // Parent GameObject to encapsulate nodes
     private int nodeCount = 0; // Counter to track the number of nodes
+    public int Count => nodeCount;
+    public int Capacity => maxNodes;
     private const int maxNodes = 5; // Maximum number of nodes allowed
 
     public GameObject nullNodePrefab; // The visual representation of a null node
@@ -39,6 +41,7 @@ public class LinkedListManager : MonoBehaviour
         // Check if the maximum number of nodes has been reached
         if (nodeCount >= maxNodes)
         {
+            ARGuide.Say("The list is full.");
             Debug.LogWarning("Maximum number of nodes reached. Cannot add more nodes.");
             return;
         }
@@ -97,7 +100,7 @@ public class LinkedListManager : MonoBehaviour
     {
         if (head == null)
         {
-            Debug.LogWarning("No nodes to remove.");
+            ARGuide.Say("The list is empty.");
             return;
         }
 

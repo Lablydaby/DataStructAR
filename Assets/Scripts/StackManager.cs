@@ -9,6 +9,8 @@ public class StackManager : MonoBehaviour
     public float animationDuration = 0.5f;
     public float spawnHeightOffset = 5.0f; // Height above the stack to spawn objects from
     public List<GameObject> stackObjects = new List<GameObject>();
+    public int Count => stackObjects.Count;
+    public int Capacity => 5;
     public Transform startPos;
     public Transform tempObject;
     public Transform parent;
@@ -105,6 +107,7 @@ public class StackManager : MonoBehaviour
 
         if (stackObjects.Count >= 5)
         {
+            ARGuide.Say("Stack Overflow!");
             return; // Limit the stack to 5 objects
         }
 
@@ -142,6 +145,10 @@ public class StackManager : MonoBehaviour
         if (stackObjects.Count > 0)
         {
             StartCoroutine(PopWithCooldown());
+        }
+        else
+        {
+            ARGuide.Say("Stack Underflow!");
         }
     }
 

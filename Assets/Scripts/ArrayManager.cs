@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -35,8 +35,13 @@ public class ArrayManager : MonoBehaviour
         }
     }
 
+    public int Count => currentIndex;
+    public int Capacity => maxNodes;
+
     public void AddElement(int prefabIndex)
     {
+        if (!isBusy && currentIndex >= maxNodes)
+            ARGuide.Say("The array is full.");
         if (isBusy || currentIndex >= maxNodes || prefabIndex < 0 || prefabIndex >= shapePrefabs.Length)
             return;
 
@@ -67,6 +72,8 @@ public class ArrayManager : MonoBehaviour
 
     public void RemoveLastElement()
     {
+        if (!isBusy && currentIndex == 0)
+            ARGuide.Say("The array is empty.");
         if (isBusy || currentIndex == 0)
             return;
 
