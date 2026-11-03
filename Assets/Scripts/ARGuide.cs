@@ -44,6 +44,14 @@ public class ARGuide : MonoBehaviour
             guide.Narrate(message, -1, true);
     }
 
+    // Managers report each finished operation ("add", "insert", "pop", "enqueue-wrap"...) for the missions
+    public static void Record(string op, int index = -1)
+    {
+        ARGuide guide = FindObjectOfType<ARGuide>();
+        if (guide != null)
+            guide.OnOperation(op, index);
+    }
+
     // Managers describe what an operation just did, and how many steps it took
     public static void Explain(string message, int steps)
     {
@@ -261,6 +269,9 @@ public class ARGuide : MonoBehaviour
         if (topicName == "Array" || topicName == "Linked List")
             BuildPositionRow(group);
 
+        // Before the shape picker, so its open list draws over the mission card
+        BuildMissionCard(group);
+
         if (originalShapes != null)
             BuildShapePicker(group);
 
@@ -270,6 +281,127 @@ public class ARGuide : MonoBehaviour
     }
 
     private int Shape => originalShapes != null ? originalShapes.value : 0;
+
+    // ---- Missions: three short goals per structure, checked as students use the controls ----
+
+    private class Mission
+    {
+        public string text;
+        public System.Func<string, int, bool> done; // (operation, index) -> is this mission done?
+    }
+
+    private readonly List<Mission> missions = new List<Mission>();
+    private int missionIndex;
+    private bool missionCelebrating;
+    private Image missionCard, missionBadge;
+    private TextMeshProUGUI missionTitle, missionText, missionMark;
+    private RectTransform missionCheck;
+    private readonly List<Image> missionDots = new List<Image>();
+
+    private void DefineMissions()
+    {
+        void Add(string text, System.Func<string, int, bool> done) => missions.Add(new Mission { text = text, done = done });
+        int Items() => count != null ? count() : 0;
+        switch (topicName)
+        {
+            case "Array":
+                Add("Fill the array up to index 2.", (op, i) => Items() >= 3);
+                Add("Insert a value at index 0. Watch every element shift right to make room.", (op, i) => op == "insert" && i == 0);
+                Add("Delete the element at index 1. The ones after it shift left to close the gap.", (op, i) => op == "delete" && i == 1);
+                break;
+            case "Linked List":
+                Add("Build a list of 3 nodes with Add.", (op, i) => op == "add" && Items() >= 3);
+                Add("Insert a node at the head. Notice it takes only 1 step.", (op, i) => op == "insert-head");
+                Add("Delete node 2. Count the links walked to reach the node before it.", (op, i) => op == "delete" && i == 1);
+                break;
+            case "Stack":
+                Add("Push until the stack is full: 5 blocks.", (op, i) => op == "push" && Items() >= 5);
+                Add("Push once more to see a stack overflow.", (op, i) => op == "overflow");
+                Add("Pop until one block is left. The first one in is the last one out.", (op, i) => op == "pop" && Items() == 1);
+                break;
+            case "Queue":
+                Add("Enqueue 3 shapes. FRONT stays on the first one.", (op, i) => op.StartsWith("enqueue") && Items() >= 3);
+                Add("Dequeue once. The first shape in is the first one out.", (op, i) => op == "dequeue");
+                Add("Keep enqueuing until the rear wraps around to slot 0.", (op, i) => op == "enqueue-wrap");
+                break;
+        }
+    }
+
+    private void BuildMissionCard(RectTransform group)
+    {
+        DefineMissions();
+        if (missions.Count == 0)
+            return;
+
+        missionCard = DK.Box(group, DK.White, 14, "Missions");
+        DK.Anchor(missionCard, new Vector2(1, 1), new Vector2(-20, -144), new Vector2(250, 0));
+        DK.Column(missionCard.gameObject, 8, new RectOffset(14, 14, 12, 14));
+        missionCard.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        RectTransform header = UiKit.Create("Header", missionCard.transform);
+        DK.Line(header.gameObject, 8);
+        missionBadge = DK.Box(header, DK.Indigo700, 11, "Badge");
+        DK.Size(missionBadge, 22, 22);
+        missionMark = DK.Text(missionBadge.transform, "", 12, DK.White, true, TextAlignmentOptions.Center);
+        UiKit.Stretch(missionMark.rectTransform, Vector2.zero, Vector2.one);
+        missionCheck = DK.Icon(missionBadge.transform, "check", 12, DK.White);
+        DK.Anchor(missionCheck, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(12, 12));
+        missionTitle = DK.Caps(header, "", 10, DK.Lavender500);
+
+        missionText = DK.Text(missionCard.transform, "", 14, DK.Indigo900, true);
+
+        RectTransform dots = UiKit.Create("Dots", missionCard.transform);
+        DK.Line(dots.gameObject, 6);
+        for (int i = 0; i < missions.Count; i++)
+        {
+            Image dot = DK.Box(dots, DK.Lavender300, 4, "Dot");
+            DK.Size(dot, 22, 6);
+            missionDots.Add(dot);
+        }
+        RefreshMission();
+    }
+
+    private void RefreshMission()
+    {
+        bool allDone = missionIndex >= missions.Count;
+        missionBadge.color = allDone || missionCelebrating ? DK.Green : DK.Indigo700;
+        missionMark.text = allDone || missionCelebrating ? "" : (missionIndex + 1).ToString();
+        missionCheck.gameObject.SetActive(allDone || missionCelebrating);
+        missionCard.color = allDone || missionCelebrating ? DK.GreenTint : DK.White;
+        missionTitle.text = allDone ? "ALL MISSIONS DONE"
+            : missionCelebrating ? $"MISSION {missionIndex + 1} COMPLETE"
+            : $"MISSION {missionIndex + 1} OF {missions.Count}";
+        missionText.text = allDone
+            ? $"Nice work! You've tried the key ideas of the {topicName.ToLowerInvariant()}. Tap Go to Quiz when you're ready."
+            : missions[missionIndex].text;
+        for (int i = 0; i < missionDots.Count; i++)
+            missionDots[i].color = i < missionIndex || (i == missionIndex && missionCelebrating) ? DK.Green
+                : i == missionIndex ? DK.Indigo700 : DK.Lavender300;
+    }
+
+    private void OnOperation(string op, int index)
+    {
+        if (missionCard == null || missionCelebrating || missionIndex >= missions.Count)
+            return;
+        if (missions[missionIndex].done(op, index))
+            StartCoroutine(CompleteMission());
+    }
+
+    private IEnumerator CompleteMission()
+    {
+        missionCelebrating = true;
+        RefreshMission();
+        yield return new WaitForSeconds(2f);
+        missionCelebrating = false;
+        missionIndex++;
+        RefreshMission();
+        // A mission can already be satisfied by the current state (e.g. a list that's long enough)
+        if (missionIndex < missions.Count && missions[missionIndex].done("", -1))
+            StartCoroutine(CompleteMission());
+    }
+
+    // For the screenshot tool
+    public string MissionStatus => missionIndex >= missions.Count ? "all done" : $"{missionIndex + 1}/{missions.Count}: {missions[missionIndex].text}";
 
     // Array: pick an index, then insert or delete there. Linked list: insert at the head, or delete node N.
     private void BuildPositionRow(RectTransform group)
@@ -415,7 +547,7 @@ public class ARGuide : MonoBehaviour
         card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         DK.Caps(card.transform, "HOW TO USE", 11, DK.Lavender500);
         DK.Text(card.transform, controlsHint, 17, DK.Indigo900);
-        DK.Text(card.transform, "After each action, the caption at the bottom explains what happened and counts its steps: the pointer changes, shifts or links walked it took.", 14, DK.Indigo500);
+        DK.Text(card.transform, "After each action, the caption at the bottom explains what happened and counts its steps: the pointer changes, shifts or links walked it took. Try the missions on the right, one at a time.", 14, DK.Indigo500);
         RectTransform buttonRow = UiKit.Create("Buttons", card.transform);
         DK.Line(buttonRow.gameObject, 0, TextAnchor.MiddleRight);
         Button gotIt = DK.Pill(buttonRow, "Got it", DK.Indigo700, DK.White, 12, 15, () => howTo.SetActive(false));

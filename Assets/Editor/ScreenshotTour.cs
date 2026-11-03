@@ -183,6 +183,7 @@ public static class ScreenshotTour
             Do(2.5f, ARDemo.PretendUprightMarkerFound);
             Note("scene " + scene);
         }
+        Do(0.1f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
 
         Scene("Array");
         Note("remove from empty"); Do(0.2f, () => Arr().RemoveLastElement());
@@ -231,6 +232,55 @@ public static class ScreenshotTour
         Note("enqueue x2 (wrap)"); Do(0.8f, () => Que().Enqueue(0)); Do(1.3f, () => Que().Enqueue(0));
         for (int i = 0; i < 5; i++) { Note("dequeue"); Do(1.3f, () => Que().Dequeue()); }
         Note("dequeue empty"); Do(0.8f, () => Que().Dequeue());
+        // The missions, played straight through in each scene
+        void Mission() => Do(0.05f, () => Debug.Log("[Mission] " + Object.FindObjectOfType<ARGuide>().MissionStatus));
+        void Shot(float wait, string name) => Do(wait, () => Capture(name));
+
+        Scene("Array"); Mission();
+        Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
+        for (int i = 0; i < 3; i++) Do(0.9f, () => Arr().AddElement(0));
+        Do(0.2f, ARDemo.FrameUpright);
+        Shot(0.3f, "array-mission-1-complete"); Mission();
+        Do(2.2f, () => Arr().InsertAt(0, 1)); Mission();
+        Shot(1.6f, "array-mission-2-complete"); Mission();
+        Do(2.2f, () => Arr().DeleteAt(1)); Mission();
+        Do(3.4f, () => { }); Mission();
+        Shot(0.1f, "array-missions-done");
+
+        Scene("LinkedList"); Mission();
+        Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
+        for (int i = 0; i < 3; i++) Do(0.6f, () => Lst().AddNode(0));
+        Do(0.5f, () => { }); Mission();
+        Do(2.2f, () => Lst().InsertAtHead(1)); Mission();
+        Do(2.4f, () => Lst().DeleteAt(1)); Mission();
+        Do(2.4f, () => { }); Mission();
+        // A narrower 16:9 phone: everything should still fit
+        Do(0.2f, () => SetGameViewSize(1280, 720));
+        Do(0.4f, ARDemo.FrameUpright);
+        Shot(0.3f, "linkedlist-16x9-missions-done");
+        Do(0.2f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
+
+        Scene("Stack"); Mission();
+        Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
+        Do(2.5f, () => Stk().Push(0)); Do(0.8f, () => Stk().Push(0)); Mission();
+        Do(2.4f, () => Stk().Push(0)); Mission();
+        for (int i = 0; i < 4; i++) Do(2.4f, () => Stk().Pop());
+        Do(0.5f, () => { }); Mission();
+        Do(2.4f, () => { }); Mission();
+        Do(0.2f, ARDemo.FrameUpright);
+        Shot(0.3f, "stack-missions-done");
+
+        Scene("queue"); Mission();
+        Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
+        for (int i = 0; i < 3; i++) Do(1.3f, () => Que().Enqueue(0));
+        Do(1.3f, () => { }); Mission();
+        Do(2.2f, () => Que().Dequeue()); Mission();
+        Do(2.4f, () => Que().Enqueue(0)); Do(1.3f, () => Que().Enqueue(0)); Do(1.3f, () => Que().Enqueue(0)); Mission();
+        Do(1.4f, () => { }); Mission();
+        Do(0.2f, ARDemo.FrameUpright);
+        Shot(0.3f, "queue-mission-3-complete");
+        Do(2.4f, () => { }); Mission();
+
         Do(0.5f, () => Debug.Log("[Check] done"));
         return list;
     }

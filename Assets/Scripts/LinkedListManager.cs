@@ -52,6 +52,7 @@ public class LinkedListManager : MonoBehaviour
         int last = nodes.Count > 0 ? values[nodes.Count - 1] : -1;
         int value = Spawn(nodes.Count, prefabIndex);
         Relink();
+        ARGuide.Record("add", nodes.Count - 1);
         StartCoroutine(Layout(() =>
         {
             if (nodes.Count == 1)
@@ -70,6 +71,7 @@ public class LinkedListManager : MonoBehaviour
         int oldHead = nodes.Count > 0 ? values[0] : -1;
         int value = Spawn(0, prefabIndex);
         Relink();
+        ARGuide.Record("insert-head", 0);
         StartCoroutine(Layout(() =>
             ARGuide.Explain(oldHead < 0
                 ? $"Inserted {value} at the head. It's the only node, pointing to null."
@@ -89,6 +91,7 @@ public class LinkedListManager : MonoBehaviour
         bool only = nodes.Count == 1;
         int before = nodes.Count > 1 ? values[nodes.Count - 2] : -1;
         int value = Remove(nodes.Count - 1);
+        ARGuide.Record("remove", nodes.Count);
         StartCoroutine(Layout(() =>
             ARGuide.Explain(only
                 ? $"Removed {value}. The list is empty now: Head points to null."
@@ -115,6 +118,7 @@ public class LinkedListManager : MonoBehaviour
         int before = index > 0 ? values[index - 1] : -1;
         int value = Remove(index);
         string next = index < nodes.Count ? values[index].ToString() : "null";
+        ARGuide.Record("delete", index);
         StartCoroutine(Layout(() =>
             ARGuide.Explain(index == 0
                 ? $"Deleted {value}, the head. Head now points to {next}. Nothing else changed."

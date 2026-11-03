@@ -20,7 +20,9 @@ public class DesignRoot : MonoBehaviour
         Vector2 size = parent.rect.size;
         if (size.x <= 0 || size.y <= 0)
             return;
-        float scale = fitHeight ? size.y / designSize.y : size.x / designSize.x;
+        // Landscape screens fit the design height, but never so much that the design's width overflows
+        // (e.g. 16:9 phones or iPads); the extra room then goes to the height
+        float scale = fitHeight ? Mathf.Min(size.y / designSize.y, size.x / designSize.x) : size.x / designSize.x;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
         rect.localScale = new Vector3(scale, scale, 1f);

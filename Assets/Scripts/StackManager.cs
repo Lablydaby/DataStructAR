@@ -115,6 +115,7 @@ public class StackManager : MonoBehaviour
         if (stackObjects.Count >= 5)
         {
             ARGuide.Say("Stack Overflow!");
+            ARGuide.Record("overflow");
             return; // Limit the stack to 5 objects
         }
 
@@ -135,6 +136,8 @@ public class StackManager : MonoBehaviour
         valueLabels.Add(ARText.Label(Anchor, value.ToString(), 0.9f, ARText.Ink, newObject.transform, startPos, LabelSide, 0));
         UpdateTopLabel();
         // The three starting blocks arrive on their own; only the student's pushes are explained
+        if (initialStackDone)
+            ARGuide.Record("push");
         if (initialStackDone)
             ARGuide.Explain($"Pushed {value}. It's the new top; nothing below it moved.", 1);
 
@@ -163,6 +166,7 @@ public class StackManager : MonoBehaviour
         else
         {
             ARGuide.Say("Stack Underflow!");
+            ARGuide.Record("underflow");
         }
     }
 
@@ -178,6 +182,7 @@ public class StackManager : MonoBehaviour
         Destroy(valueLabels[valueLabels.Count - 1].gameObject);
         valueLabels.RemoveAt(valueLabels.Count - 1);
         UpdateTopLabel();
+        ARGuide.Record("pop");
         ARGuide.Explain($"Popped {value} off the top. " + (values.Count > 0 ? $"{values[values.Count - 1]} is the new top." : "The stack is empty now."), 1);
 
         Vector3 targetPosition = topObject.transform.position + StackUp * spawnHeightOffset; // Move up before destroying

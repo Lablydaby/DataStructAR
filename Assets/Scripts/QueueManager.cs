@@ -63,6 +63,7 @@ public class QueueManager : MonoBehaviour
         if (count >= queueCapacity)
         {
             ShowMessage("The queue is full. That's an overflow! Dequeue first to make room.");
+            ARGuide.Record("overflow");
             return;
         }
 
@@ -89,6 +90,7 @@ public class QueueManager : MonoBehaviour
 
         count++;
         UpdatePointers();
+        ARGuide.Record(wrapped ? "enqueue-wrap" : "enqueue", slot);
         if (count == 1)
             ARGuide.Explain($"Enqueued {values[slot]}. It's both the front and the rear.", 1);
         else
@@ -126,6 +128,7 @@ public class QueueManager : MonoBehaviour
         front = (front + 1) % queueCapacity;
         count--;
         UpdatePointers();
+        ARGuide.Record("dequeue");
         ARGuide.Explain($"Dequeued {value} from the front. " +
                         (count > 0 ? $"{values[front]} is the new front; nothing else moved." : "The queue is empty now."), 1);
 
@@ -154,7 +157,8 @@ public class QueueManager : MonoBehaviour
         if (count == 0)
             return;
         ARText.Move(frontLabel, spaces[front].transform, 0, -0.075f);
-        ARText.Move(rearLabel, spaces[Rear].transform, 0, count == 1 ? -0.115f : -0.075f);
+        // REAR sits one line lower, so it never runs into FRONT in a neighbouring slot
+        ARText.Move(rearLabel, spaces[Rear].transform, 0, -0.115f);
     }
 
     private void ShowMessage(string message)

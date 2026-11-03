@@ -123,6 +123,7 @@ public class ArrayManager : MonoBehaviour
 
         yield return StartCoroutine(MoveToPosition(element.transform, targetPos, animationDuration));
 
+        ARGuide.Record(positional && shifted > 0 ? "insert" : "add", index);
         if (!positional || shifted == 0)
             ARGuide.Explain($"Added {value} at index {index}, the next free slot. Nothing had to shift.", 1);
         else
@@ -149,6 +150,7 @@ public class ArrayManager : MonoBehaviour
             shifted++;
         }
 
+        ARGuide.Record(positional && shifted > 0 ? "delete" : "remove", index);
         if (!positional || shifted == 0)
             ARGuide.Explain($"Removed {value} from index {index}, the last element. Nothing had to shift.", 1);
         else
