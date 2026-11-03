@@ -17,7 +17,9 @@ from PIL import Image, ImageDraw, ImageFont
 # Same proportions as the current Vuforia targets (1 : 0.72)
 WIDTH, HEIGHT = 2000, 1440
 SCALE = 2  # Drawn at double size, then scaled down for smooth edges
-BAND = 300  # Frame thickness
+# Frame thickness: thinner at the sides so the calm centre fits a full row of 5 items
+BAND_X = 170
+BAND_Y = 330
 CENTRE_RADIUS = 64
 
 # App branding (matches UiKit)
@@ -42,7 +44,7 @@ def s(value):
 
 
 def in_centre(x, y, margin=0):
-    return BAND - margin < x < WIDTH - BAND + margin and BAND - margin < y < HEIGHT - BAND + margin
+    return BAND_X - margin < x < WIDTH - BAND_X + margin and BAND_Y - margin < y < HEIGHT - BAND_Y + margin
 
 
 def random_band_point(rng):
@@ -172,7 +174,7 @@ def make_card(kind, title, accent, seed):
     draw_sprinkles(draw, rng, accent)
 
     # Calm stage in the middle, with a thin outline so its edge is crisp
-    centre = [s(BAND), s(BAND), s(WIDTH - BAND), s(HEIGHT - BAND)]
+    centre = [s(BAND_X), s(BAND_Y), s(WIDTH - BAND_X), s(HEIGHT - BAND_Y)]
     draw.rounded_rectangle([c + (-s(14) if i < 2 else s(14)) for i, c in enumerate(centre)],
                            radius=s(CENTRE_RADIUS + 14), fill=WHITE)
     draw.rounded_rectangle(centre, radius=s(CENTRE_RADIUS), fill=CENTRE)

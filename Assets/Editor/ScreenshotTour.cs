@@ -89,7 +89,7 @@ public static class ScreenshotTour
     [MenuItem("Build/Capture Upright Markers")]
     public static void RunUprightMarkers()
     {
-        Start(UprightMarkersMode, OutputFolder + "/UprightMarkers", "Assets/Scenes/AR/LinkedList.unity", PortraitHeight, PortraitWidth);
+        Start(UprightMarkersMode, OutputFolder + "/UprightMarkers", "Assets/Scenes/MainMenu.unity", PortraitHeight, PortraitWidth);
     }
 
     public static void RunUprightMarkersAndQuit()
@@ -105,23 +105,29 @@ public static class ScreenshotTour
         void Shot(float wait, string name) => Do(wait, () => Capture(name));
 
         Do(0.1f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
-        Do(3f, ARDemo.PretendUprightMarkerFound);
-        for (int i = 0; i < 3; i++)
-        {
-            int shape = i;
-            Do(0.4f, () =>
-            {
-                LinkedListManager list = Object.FindObjectOfType<LinkedListManager>();
-                list.AddNode(shape % list.nodePrefabs.Length);
-            });
-        }
-        Do(0.8f, ARDemo.FrameUpright);
-        Shot(0.3f, "linkedlist-upright");
 
-        Do(0.5f, () => SceneManager.LoadScene("Stack"));
-        Do(1f, ARDemo.PretendUprightMarkerFound);
-        Do(3f, ARDemo.FrameUpright);
-        Shot(0.3f, "stack-upright");
+        // Each scene with a few items added, viewed head-on with its stage card drawn underneath
+        (string scene, string slug, Action<int> add)[] scenes =
+        {
+            ("Array", "array", i => Object.FindObjectOfType<ArrayManager>().AddElement(i % Object.FindObjectOfType<ArrayManager>().shapePrefabs.Length)),
+            ("LinkedList", "linkedlist", i => Object.FindObjectOfType<LinkedListManager>().AddNode(i % Object.FindObjectOfType<LinkedListManager>().nodePrefabs.Length)),
+            ("Stack", "stack", i => { if (i >= 3) Object.FindObjectOfType<StackManager>().Push(i % 3); }), // Starts with three blocks of its own
+            ("queue", "queue", i => Object.FindObjectOfType<QueueManager>().Enqueue(i % Object.FindObjectOfType<QueueManager>().shapePrefabs.Length)),
+        };
+        foreach ((string scene, string slug, Action<int> add) in scenes)
+        {
+            Do(0.5f, () => SceneManager.LoadScene(scene));
+            Do(2.5f, ARDemo.PretendUprightMarkerFound);
+            // Fill to the 5-item maximum, so the layout is checked at its largest
+            for (int i = 0; i < 5; i++)
+            {
+                int shape = i;
+                Do(1.3f, () => add(shape));
+            }
+            Do(2.5f, ARDemo.FrameUpright);
+            Do(0.1f, () => ARDemo.LogContentBounds(scene));
+            Shot(0.3f, slug + "-upright");
+        }
         return list;
     }
 

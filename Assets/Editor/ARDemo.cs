@@ -1,4 +1,5 @@
 using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 using Vuforia;
 
@@ -28,11 +29,51 @@ public static class ARDemo
     // Views the card head-on with its top edge up, like a marker shown on a monitor or stuck to a wall
     public static void PretendUprightMarkerFound()
     {
-        RevealTarget();
+        ImageTargetBehaviour target = RevealTarget();
+        ShowCard(target);
         Camera camera = TakeOverCamera();
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0.93f, 0.93f, 0.95f);
         FrameUpright();
+    }
+
+    // Logs where the 3D content sits on the card, in card units (width 1, x across, z up the card)
+    public static void LogContentBounds(string label)
+    {
+        Transform marker = FindMarker().transform;
+        bool any = false;
+        Vector3 min = Vector3.zero, max = Vector3.zero;
+        foreach (Renderer renderer in Object.FindObjectsOfType<Renderer>())
+        {
+            if (!renderer.enabled || renderer.name == "CardPreview" || renderer.GetComponentInParent<ImageTargetBehaviour>() == null)
+                continue;
+            Bounds b = renderer.bounds;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 corner = marker.InverseTransformPoint(b.center + Vector3.Scale(b.extents, new Vector3((i & 1) * 2 - 1, (i & 2) - 1, (i & 4) / 2 - 1)));
+                min = any ? Vector3.Min(min, corner) : corner;
+                max = any ? Vector3.Max(max, corner) : corner;
+                any = true;
+            }
+        }
+        Debug.Log($"[Layout] {label}: x {min.x:F3}..{max.x:F3}  y {min.y:F3}..{max.y:F3}  z {min.z:F3}..{max.z:F3}");
+    }
+
+    // Draws the card image where the real card would be, so captures show the content against it
+    private static void ShowCard(ImageTargetBehaviour target)
+    {
+        Texture texture = new SerializedObject(target).FindProperty("mRuntimeTexture").objectReferenceValue as Texture;
+        if (texture == null)
+            return;
+
+        GameObject card = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        card.name = "CardPreview";
+        Object.Destroy(card.GetComponent<Collider>());
+        card.transform.SetParent(target.transform, false);
+        card.transform.localRotation = Quaternion.Euler(90, 0, 0); // Quad faces -Z; the card faces the target's up
+        card.transform.localScale = new Vector3(1f, (float)texture.height / texture.width, 1f);
+        Material material = new Material(Shader.Find("Unlit/Texture")) { mainTexture = texture };
+        card.GetComponent<Renderer>().sharedMaterial = material;
     }
 
     // Points the camera straight at the card so everything shown on it fits, card top edge up
@@ -70,6 +111,8 @@ public static class ARDemo
         int bestCount = -1;
         foreach (ImageTargetBehaviour target in Object.FindObjectsOfType<ImageTargetBehaviour>())
         {
+            if (target.name.StartsWith("emulator"))
+                continue;
             int count = target.GetComponentsInChildren<Renderer>(true).Length;
             if (count > bestCount)
             {

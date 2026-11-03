@@ -811,7 +811,7 @@ Transform:
   m_GameObject: {fileID: 369286259}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.1463, y: -0.0158, z: 0}
+  m_LocalPosition: {x: -0.40030003, y: 0.1042, z: -0.124}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2689,12 +2689,12 @@ MonoBehaviour:
   RuntimeCollider: 0
   mTrackableName: array
   mInitializedInEditor: 1
-  mDataSetPath: Vuforia/DataStructAR.xml
-  mAspectRatio: 0.719727
-  mImageTargetType: 0
+  mDataSetPath: 
+  mAspectRatio: 0.72
+  mImageTargetType: 3
   mWidth: 1
-  mHeight: 0.719727
-  mRuntimeTexture: {fileID: 0}
+  mHeight: 0.72
+  mRuntimeTexture: {fileID: 2800000, guid: f4d755ff21f58cc4bbf5d7403590abf7, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
@@ -2730,7 +2730,7 @@ MonoBehaviour:
   mObserverBehaviour: {fileID: 1684069996}
   mHiddenRoot: {fileID: 0}
   mTargetName: array
-  mDatasetName: Vuforia/DataStructAR.xml
+  mDatasetName: 
   mCastedBehaviour: {fileID: 1684069996}
   mMeshFilter: {fileID: 0}
   mMeshRenderer: {fileID: 0}
