@@ -196,7 +196,7 @@ public class QuizManager : MonoBehaviour
         Image panel = UiKit.Panel(quizBG, UiKit.CardTint);
         panel.name = "Explanation";
         panel.raycastTarget = true;
-        UiKit.Stretch(panel.rectTransform, new Vector2(0.06f, 0.495f), new Vector2(0.95f, 0.605f));
+        UiKit.Stretch(panel.rectTransform, new Vector2(0.07f, 0.505f), new Vector2(0.94f, 0.605f));
         panel.gameObject.AddComponent<Button>().onClick.AddListener(() => continueTapped = true);
 
         explanationText = UiKit.Text(panel.transform, "", "Poppins-Regular SDF", 34, UiKit.Body, TextAlignmentOptions.Left);
