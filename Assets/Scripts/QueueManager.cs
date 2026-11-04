@@ -38,8 +38,8 @@ public class QueueManager : MonoBehaviour
         spaces = new GameObject[queueCapacity];
         InitializeSpaces();
 
-        frontLabel = ARText.Label(transform, "FRONT", 0.55f, ARText.Ink, spaces[0].transform, startPosition, 0, -0.075f);
-        rearLabel = ARText.Label(transform, "REAR", 0.55f, ARText.Ink, spaces[0].transform, startPosition, 0, -0.115f);
+        frontLabel = ARText.Tag(transform, "FRONT", 0.5f, spaces[0].transform, startPosition, 0, -0.075f);
+        rearLabel = ARText.Tag(transform, "REAR", 0.5f, spaces[0].transform, startPosition, 0, -0.14f);
         UpdatePointers();
     }
 
@@ -153,12 +153,19 @@ public class QueueManager : MonoBehaviour
         if (frontLabel == null)
             return;
         frontLabel.gameObject.SetActive(count > 0);
-        rearLabel.gameObject.SetActive(count > 0);
+        // With one item, a single "FRONT · REAR" tag points at it
+        rearLabel.gameObject.SetActive(count > 1);
+        string frontText = count == 1 ? "FRONT · REAR" : "FRONT";
+        if (frontLabel.text != frontText)
+        {
+            frontLabel.text = frontText;
+            ARText.StyleTag(frontLabel);
+        }
         if (count == 0)
             return;
         ARText.Move(frontLabel, spaces[front].transform, 0, -0.075f);
         // REAR sits one line lower, so it never runs into FRONT in a neighbouring slot
-        ARText.Move(rearLabel, spaces[Rear].transform, 0, -0.115f);
+        ARText.Move(rearLabel, spaces[Rear].transform, 0, -0.14f);
     }
 
     private void ShowMessage(string message)

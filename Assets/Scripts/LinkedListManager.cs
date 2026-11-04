@@ -181,7 +181,7 @@ public class LinkedListManager : MonoBehaviour
         node.SetData(value);
         nodes.Insert(index, node);
         values.Insert(index, value);
-        valueLabels.Insert(index, ARText.Label(nodeListParent.transform, value.ToString(), ValueSize, ARText.Ink, node.transform, startPosition, 0, ValueAbove));
+        valueLabels.Insert(index, ARText.Value(nodeListParent.transform, value.ToString(), ValueSize, node.transform, startPosition, 0, ValueAbove));
         return value;
     }
 
@@ -266,14 +266,13 @@ public class LinkedListManager : MonoBehaviour
     // Labels follow their node, sit above it whichever way the card faces, and turn toward the camera
     private void AttachLabel(GameObject label, Transform follow, float alongRow, float above)
     {
-        // Same look as the other AR labels: dark, centred, with a white edge so it reads on the white card
+        // Same look as the other AR tags: white capitals on a dark indigo chip
         TextMeshPro text = label.GetComponentInChildren<TextMeshPro>();
         if (text != null)
         {
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = ARText.Ink;
-            text.outlineWidth = 0.3f;
-            text.outlineColor = Color.white;
+            text.font = UiKit.Font("Poppins-Bold SDF");
+            text.outlineWidth = 0f;
+            ARText.StyleTag(text);
         }
 
         ARLabel arLabel = label.AddComponent<ARLabel>();

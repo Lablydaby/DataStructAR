@@ -134,7 +134,7 @@ public class StackManager : MonoBehaviour
         stackObjects.Add(newObject);
         int value = ARText.NewValue(values);
         values.Add(value);
-        valueLabels.Add(ARText.Label(Anchor, value.ToString(), 0.9f, ARText.Ink, newObject.transform, startPos, LabelSide, 0));
+        valueLabels.Add(ARText.Value(Anchor, value.ToString(), 0.9f, newObject.transform, startPos, LabelSide, 0));
         UpdateTopLabel();
         // The three starting blocks arrive on their own; only the student's pushes are explained
         if (initialStackDone)
@@ -207,11 +207,10 @@ public class StackManager : MonoBehaviour
     private void UpdateTopLabel()
     {
         if (topLabel == null)
-            topLabel = ARText.Label(Anchor, "TOP", 0.6f, ARText.Ink, startPos, startPos, LabelSide * 2.2f, 0);
-        topLabel.text = "← TOP";
+            topLabel = ARText.Tag(Anchor, "TOP", 0.55f, startPos, startPos, LabelSide * 3.1f, 0);
         topLabel.gameObject.SetActive(stackObjects.Count > 0);
         if (stackObjects.Count > 0)
-            ARText.Move(topLabel, stackObjects[stackObjects.Count - 1].transform, LabelSide * 2.2f, 0);
+            ARText.Move(topLabel, stackObjects[stackObjects.Count - 1].transform, LabelSide * 3.1f, 0);
     }
 
     // Resting spot of the object at this index, local to the anchor

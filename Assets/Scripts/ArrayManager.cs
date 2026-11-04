@@ -33,7 +33,11 @@ public class ArrayManager : MonoBehaviour
             return;
         selectedSlot = slot;
         for (int i = 0; i < indexLabels.Count; i++)
-            indexLabels[i].color = i == slot ? ARText.Ink : ARText.IndexRed;
+        {
+            // The selected index is white on indigo; the rest are red on white
+            indexLabels[i].color = i == slot ? Color.white : ARText.IndexRed;
+            ARText.Chip(indexLabels[i], i == slot ? ARText.Ink : Color.white);
+        }
     }
     private bool isBusy = false;
 
@@ -57,6 +61,7 @@ public class ArrayManager : MonoBehaviour
             spaces.Add(space);
             // Red index numbers under the slots, like the lesson's diagrams
             indexLabels.Add(ARText.Label(transform, i.ToString(), 0.65f, ARText.IndexRed, space.transform, startPosition, 0, -0.085f));
+            ARText.Chip(indexLabels[indexLabels.Count - 1], Color.white);
         }
     }
 
@@ -131,7 +136,7 @@ public class ArrayManager : MonoBehaviour
         int value = ARText.NewValue(values);
         elements.Insert(index, element);
         values.Insert(index, value);
-        valueLabels.Insert(index, ARText.Label(transform, value.ToString(), ValueSize, ARText.Ink, element.transform, startPosition, 0, ValueAbove));
+        valueLabels.Insert(index, ARText.Value(transform, value.ToString(), ValueSize, element.transform, startPosition, 0, ValueAbove));
 
         yield return StartCoroutine(MoveToPosition(element.transform, targetPos, animationDuration));
 
