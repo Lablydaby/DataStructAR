@@ -62,6 +62,7 @@ public class ArrayManager : MonoBehaviour
             // Red index numbers under the slots, like the lesson's diagrams
             indexLabels.Add(ARText.Label(transform, i.ToString(), 0.65f, ARText.IndexRed, space.transform, startPosition, 0, -0.085f));
             ARText.Chip(indexLabels[indexLabels.Count - 1], Color.white);
+            ARText.KeepClear(indexLabels[indexLabels.Count - 1]);
         }
     }
 
@@ -137,6 +138,7 @@ public class ArrayManager : MonoBehaviour
         elements.Insert(index, element);
         values.Insert(index, value);
         valueLabels.Insert(index, ARText.Value(transform, value.ToString(), ValueSize, element.transform, startPosition, 0, ValueAbove));
+        valueLabels[index].GetComponent<ARLabel>().clearOf = spaces[0].transform; // Clear of the slot too
 
         yield return StartCoroutine(MoveToPosition(element.transform, targetPos, animationDuration));
 

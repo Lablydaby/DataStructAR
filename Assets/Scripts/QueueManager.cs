@@ -40,6 +40,8 @@ public class QueueManager : MonoBehaviour
 
         frontLabel = ARText.Tag(transform, "FRONT", 0.5f, spaces[0].transform, startPosition, 0, -0.075f);
         rearLabel = ARText.Tag(transform, "REAR", 0.5f, spaces[0].transform, startPosition, 0, -0.14f);
+        // REAR sits one row below FRONT, so they never collide in neighbouring slots
+        ARText.KeepClear(rearLabel, ARText.ChipHeight(frontLabel) + ARText.Gap * 0.5f);
         UpdatePointers();
     }
 
@@ -84,7 +86,8 @@ public class QueueManager : MonoBehaviour
         GameObject newElement = Instantiate(shapePrefabs[prefabIndex], spawnPos, targetRot, transform);
         elements[slot] = newElement;
         values[slot] = ARText.NewValue(CurrentValues());
-        valueLabels[slot] = ARText.Label(transform, values[slot].ToString(), LabelSize, ARText.Ink, newElement.transform, startPosition, 0, 0.08f);
+        valueLabels[slot] = ARText.Value(transform, values[slot].ToString(), LabelSize, newElement.transform, startPosition, 0, 0.08f);
+        valueLabels[slot].GetComponent<ARLabel>().clearOf = spaces[slot].transform; // Clear of the slot too
 
         yield return MoveToPosition(newElement.transform, targetPos, animationDuration);
 

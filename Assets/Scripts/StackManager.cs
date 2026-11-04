@@ -210,7 +210,7 @@ public class StackManager : MonoBehaviour
             topLabel = ARText.Tag(Anchor, "TOP", 0.55f, startPos, startPos, LabelSide * 3.1f, 0);
         topLabel.gameObject.SetActive(stackObjects.Count > 0);
         if (stackObjects.Count > 0)
-            ARText.Move(topLabel, stackObjects[stackObjects.Count - 1].transform, LabelSide * 3.1f, 0);
+            ARText.Move(topLabel, valueLabels[valueLabels.Count - 1].transform, LabelSide, 0);
     }
 
     // Resting spot of the object at this index, local to the anchor

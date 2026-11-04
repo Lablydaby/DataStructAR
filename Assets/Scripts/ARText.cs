@@ -38,12 +38,32 @@ public static class ARText
         return tmp;
     }
 
+    // Space kept between a chip and the shape it names (about 8px against a 62px shape in the design)
+    public const float Gap = 0.008f;
+
+    // Makes a label keep clear of the shape it follows, plus any extra distance
+    public static void KeepClear(TextMeshPro label, float extra = 0f)
+    {
+        ARLabel arLabel = label.GetComponentInParent<ARLabel>();
+        arLabel.gap = Gap;
+        arLabel.extra = extra;
+    }
+
+    // A chip's height in world units
+    public static float ChipHeight(TextMeshPro label)
+    {
+        Transform chip = label.transform.Find("Chip");
+        MeshFilter filter = chip != null ? chip.GetComponent<MeshFilter>() : null;
+        return filter != null && filter.sharedMesh != null ? filter.sharedMesh.bounds.size.y * chip.lossyScale.y : 0f;
+    }
+
     // A value: indigo number on a white chip
     public static TextMeshPro Value(Transform parent, string text, float size, Transform follow, Transform marker,
         float alongRow, float above)
     {
         TextMeshPro tmp = Label(parent, text, size, Ink, follow, marker, alongRow, above);
         Chip(tmp, Color.white);
+        KeepClear(tmp);
         return tmp;
     }
 
@@ -53,6 +73,7 @@ public static class ARText
     {
         TextMeshPro tmp = Label(parent, text.ToUpperInvariant(), size, Color.white, follow, marker, alongRow, above);
         StyleTag(tmp);
+        KeepClear(tmp);
         return tmp;
     }
 
@@ -94,8 +115,10 @@ public static class ARText
 
     private static Material chipMaterial;
     // Sprites/Default is always included in builds and tints by vertex colour
+    // Drawn just before solid 3D shapes, so where a chip and a shape overlap (e.g. seen at a steep angle)
+    // the shape stays whole and the chip goes behind it
     private static Material ChipMaterial => chipMaterial != null ? chipMaterial
-        : chipMaterial = new Material(Shader.Find("Sprites/Default")) { name = "AR Chip" };
+        : chipMaterial = new Material(Shader.Find("Sprites/Default")) { name = "AR Chip", renderQueue = 1999 };
 
     // A flat rounded rectangle centred on the origin, facing -Z like the text
     private static void RoundedRect(Mesh mesh, float width, float height, float radius, Color color)

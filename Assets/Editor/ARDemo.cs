@@ -74,7 +74,8 @@ public static class ARDemo
         // The card's real size is the target's width (MarkerSwap.CardWidth), not one unit
         float width = new SerializedObject(target).FindProperty("mWidth").floatValue;
         card.transform.localScale = new Vector3(width, width * texture.height / texture.width, 1f);
-        Material material = new Material(Shader.Find("Unlit/Texture")) { mainTexture = texture };
+        // Drawn first, like the camera image on a phone, so the AR chips (drawn just before solid shapes) show on it
+        Material material = new Material(Shader.Find("Unlit/Texture")) { mainTexture = texture, renderQueue = 1000 };
         card.GetComponent<Renderer>().sharedMaterial = material;
     }
 

@@ -35,6 +35,7 @@ public class LinkedListManager : MonoBehaviour
 
     private const float ValueSize = 0.9f;
     private const float ValueAbove = 0.065f;
+    private const float TagSize = 0.5f;
 
     void Start()
     {
@@ -231,18 +232,16 @@ public class LinkedListManager : MonoBehaviour
     {
         // Null sits one step past the last node, or at the start when the list is empty
         Transform follow = nodes.Count > 0 ? nodes[nodes.Count - 1].transform : startPosition;
-        float along = (nodes.Count > 0 ? nodeSpacing : 0f) + nullOffset.x;
+        // and, like the design, in line with the row just past the last node's arrow
         if (currentNullNode == null)
         {
-            currentNullNode = Instantiate(nullNodePrefab, PositionAt(nodes.Count) + startPosition.rotation * nullOffset, startPosition.rotation, nodeListParent.transform);
-            AttachLabel(currentNullNode, follow, along, nullOffset.y);
+            currentNullNode = Instantiate(nullNodePrefab, PositionAt(nodes.Count), startPosition.rotation, nodeListParent.transform);
+            AttachLabel(currentNullNode, follow, 1f, 0f);
         }
-        else
-        {
-            ARLabel label = currentNullNode.GetComponent<ARLabel>();
-            label.follow = follow;
-            label.alongRow = along;
-        }
+        ARLabel label = currentNullNode.GetComponent<ARLabel>();
+        label.follow = follow;
+        label.alongRow = nodes.Count > 0 ? 1f : 0f;    // Only the direction counts once it keeps clear
+        label.gap = nodes.Count > 0 ? ARText.Gap : -1f;
     }
 
     private void UpdateHeadMarker()
@@ -257,7 +256,7 @@ public class LinkedListManager : MonoBehaviour
         if (currentHeadMarker == null)
         {
             currentHeadMarker = Instantiate(headMarkerPrefab, nodes[0].transform.position + startPosition.rotation * headOffset, startPosition.rotation, nodeListParent.transform);
-            AttachLabel(currentHeadMarker, nodes[0].transform, headOffset.x, headOffset.y);
+            AttachLabel(currentHeadMarker, nodes[0].transform, 0f, -1f); // Below the head node, clear of it
         }
         currentHeadMarker.SetActive(true);
         currentHeadMarker.GetComponent<ARLabel>().follow = nodes[0].transform;
@@ -271,6 +270,7 @@ public class LinkedListManager : MonoBehaviour
         if (text != null)
         {
             text.font = UiKit.Font("Poppins-Bold SDF");
+            text.fontSize = TagSize / Mathf.Max(text.transform.lossyScale.x, 0.0001f); // Same size as the other tags
             text.outlineWidth = 0f;
             ARText.StyleTag(text);
         }
@@ -280,6 +280,8 @@ public class LinkedListManager : MonoBehaviour
         arLabel.marker = startPosition;
         arLabel.alongRow = alongRow;
         arLabel.above = above;
+        arLabel.lift = 0.03f;
+        arLabel.gap = ARText.Gap;
     }
 
     private static string Links(int n) => n == 1 ? "1 link" : $"{n} links";
