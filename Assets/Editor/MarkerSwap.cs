@@ -14,6 +14,10 @@ using Object = UnityEngine.Object;
 public static class MarkerSwap
 {
     private const string SourceFolder = "Markers";
+
+    // How big a card is compared with the 3D content (which is sized in world units). Above 1, the card
+    // reads as larger, so the content has more room inside its white panel.
+    public const float CardWidth = 1.25f;
     private const string AssetFolder = "Assets/Markers";
 
     private static readonly (string scene, string card)[] Scenes =
@@ -49,8 +53,9 @@ public static class MarkerSwap
     // card's white area. Re-measure and set these again whenever the cards or layouts change.
     private static readonly (string scene, Vector3 shift)[] Recentering =
     {
-        ("Assets/Scenes/AR/Array.unity", new Vector3(0.045f, 0f, 0f)),
-        ("Assets/Scenes/AR/LinkedList.unity", new Vector3(-0.05f, 0f, 0f)),
+        // v2 cards at CardWidth 1.25: the white panel spans x -0.525..0.525 and z -0.23..0.32 (centred 0.045 up).
+        // Array, linked list and queue are centred on it; the stack's base sits just above its bottom edge.
+        ("Assets/Scenes/AR/Stack.unity", new Vector3(0f, 0f, -0.05f)),
     };
 
     [MenuItem("Build/Center Content On Stage Cards")]
@@ -94,6 +99,19 @@ public static class MarkerSwap
         QueueManager queue = Object.FindObjectOfType<QueueManager>(true);
         if (queue != null) return queue.startPosition;
         return Object.FindObjectOfType<StackManager>(true).startPos;
+    }
+
+    // Logs each scene's image target size and transform scale, to see how Vuforia applies the width
+    public static void ReportTargetsAndQuit()
+    {
+        foreach ((string scenePath, string card) in Scenes)
+        {
+            EditorSceneManager.OpenScene(scenePath);
+            ImageTargetBehaviour target = Object.FindObjectsOfType<ImageTargetBehaviour>().First(t => t.gameObject.scene.path == scenePath);
+            SerializedObject so = new SerializedObject(target);
+            Debug.Log($"[MarkerSwap] {card}: width {so.FindProperty("mWidth").floatValue} height {so.FindProperty("mHeight").floatValue} scale {target.transform.localScale} children {target.transform.childCount}");
+        }
+        EditorApplication.Exit(0);
     }
 
     public static void ApplyAndQuit()
@@ -140,8 +158,8 @@ public static class MarkerSwap
         serialized.FindProperty("mDataSetPath").stringValue = "";
         serialized.FindProperty("mRuntimeTexture").objectReferenceValue = texture;
         serialized.FindProperty("mAspectRatio").floatValue = aspect;
-        serialized.FindProperty("mWidth").floatValue = 1f; // Same size as the old targets, so the content keeps its scale
-        serialized.FindProperty("mHeight").floatValue = aspect;
+        serialized.FindProperty("mWidth").floatValue = CardWidth;
+        serialized.FindProperty("mHeight").floatValue = CardWidth * aspect;
         serialized.ApplyModifiedPropertiesWithoutUndo();
 
         // Let Vuforia's own inspector code refresh the preview mesh and internal data, as if set by hand

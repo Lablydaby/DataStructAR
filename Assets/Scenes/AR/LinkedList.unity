@@ -177,8 +177,8 @@ MonoBehaviour:
   nodeListParent: {fileID: 1474341993}
   nullNodePrefab: {fileID: 963801997710078720, guid: 759291f2b7b01cf4ba358bbc6e366702, type: 3}
   headMarkerPrefab: {fileID: 4229963424917317353, guid: 60e23bc1cc9c1644e9148ef2cd59d5af, type: 3}
-  headOffset: {x: 0, y: -0.075, z: 0}
-  nullOffset: {x: 0.03, y: 0, z: 0}
+  headOffset: {x: 0.02, y: -0.075, z: 0}
+  nullOffset: {x: -0.03, y: -0.075, z: 0}
 --- !u!1 &119263390
 GameObject:
   m_ObjectHideFlags: 0
@@ -675,7 +675,7 @@ Transform:
   m_GameObject: {fileID: 369286259}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.32858717, y: 0.09327349, z: -0.04930719}
+  m_LocalPosition: {x: -0.298704, y: 0.09327349, z: 0.06126046}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2191,8 +2191,8 @@ MonoBehaviour:
   mDataSetPath: 
   mAspectRatio: 0.72
   mImageTargetType: 3
-  mWidth: 1
-  mHeight: 0.72
+  mWidth: 1.25
+  mHeight: 0.90000004
   mRuntimeTexture: {fileID: 2800000, guid: 6ea589c993207b5478e681d24b6105e8, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0

@@ -865,7 +865,7 @@ Transform:
   m_GameObject: {fileID: 369286259}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.23429999, y: 0.16420001, z: 0.03}
+  m_LocalPosition: {x: -0.21830001, y: 0.16420001, z: 0.138}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2650,8 +2650,8 @@ MonoBehaviour:
   mDataSetPath: 
   mAspectRatio: 0.72
   mImageTargetType: 3
-  mWidth: 1
-  mHeight: 0.72
+  mWidth: 1.25
+  mHeight: 0.90000004
   mRuntimeTexture: {fileID: 2800000, guid: 8dced100d3feeb444b5f855900d16af0, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0

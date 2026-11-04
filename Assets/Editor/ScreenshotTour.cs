@@ -183,6 +183,7 @@ public static class ScreenshotTour
         foreach ((string scene, Action fill) in scenes)
         {
             Do(0.5f, () => SceneManager.LoadScene(scene));
+            Do(0.1f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
             Do(2.5f, ARDemo.PretendUprightMarkerFound);
             Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
             for (int i = 0; i < 6; i++)

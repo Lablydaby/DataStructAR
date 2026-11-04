@@ -71,7 +71,9 @@ public static class ARDemo
         Object.Destroy(card.GetComponent<Collider>());
         card.transform.SetParent(target.transform, false);
         card.transform.localRotation = Quaternion.Euler(90, 0, 0); // Quad faces -Z; the card faces the target's up
-        card.transform.localScale = new Vector3(1f, (float)texture.height / texture.width, 1f);
+        // The card's real size is the target's width (MarkerSwap.CardWidth), not one unit
+        float width = new SerializedObject(target).FindProperty("mWidth").floatValue;
+        card.transform.localScale = new Vector3(width, width * texture.height / texture.width, 1f);
         Material material = new Material(Shader.Find("Unlit/Texture")) { mainTexture = texture };
         card.GetComponent<Renderer>().sharedMaterial = material;
     }
