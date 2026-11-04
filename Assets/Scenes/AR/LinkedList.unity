@@ -1808,8 +1808,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topicName: Linked List
-  controlsHint: Pick a shape and a NODE, then tap Insert or Delete. Node 1 is the
-    head, and end is after the last node. Tap Go to Quiz when you're ready.
+  controlsHint: 'Pick a shape and a NODE, then tap Insert or Delete. Position 0 is the head, and end is after the last node. Tap Go to Quiz when you''re ready.'
 --- !u!4 &1333766596
 Transform:
   m_ObjectHideFlags: 0

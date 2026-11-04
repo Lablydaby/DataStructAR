@@ -23,6 +23,18 @@ public class ArrayManager : MonoBehaviour
     private List<int> values = new List<int>();
     private List<TextMeshPro> valueLabels = new List<TextMeshPro>();
     private List<GameObject> spaces = new List<GameObject>();
+    private readonly List<TextMeshPro> indexLabels = new List<TextMeshPro>();
+    private int selectedSlot = -1;
+
+    // The slot the position stepper points at: its index turns indigo
+    public void SelectSlot(int slot)
+    {
+        if (slot == selectedSlot || indexLabels.Count == 0)
+            return;
+        selectedSlot = slot;
+        for (int i = 0; i < indexLabels.Count; i++)
+            indexLabels[i].color = i == slot ? ARText.Ink : ARText.IndexRed;
+    }
     private bool isBusy = false;
 
     private const float ValueSize = 0.9f;
@@ -44,7 +56,7 @@ public class ArrayManager : MonoBehaviour
             GameObject space = Instantiate(spacePrefab, pos, startPosition.rotation, transform);
             spaces.Add(space);
             // Red index numbers under the slots, like the lesson's diagrams
-            ARText.Label(transform, i.ToString(), 0.65f, ARText.IndexRed, space.transform, startPosition, 0, -0.085f);
+            indexLabels.Add(ARText.Label(transform, i.ToString(), 0.65f, ARText.IndexRed, space.transform, startPosition, 0, -0.085f));
         }
     }
 

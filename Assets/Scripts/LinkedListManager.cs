@@ -99,8 +99,8 @@ public class LinkedListManager : MonoBehaviour
         ARGuide.Record("insert", index);
         StartCoroutine(Layout(() =>
             ARGuide.Explain(index == 1
-                ? $"Inserted {value} as node 2: the node before it is the head, {before}, so {before} now points to {value} and {value} points to {after}."
-                : $"Inserted {value} as node {index + 1}: walked {Links(index - 1)} from the head to {before}, then pointed {before} to {value} and {value} to {after}.", index)));
+                ? $"Inserted {value} at position 1: the node before it is the head, {before}, so {before} now points to {value} and {value} points to {after}."
+                : $"Inserted {value} at position {index}: walked {Links(index - 1)} from the head to {before}, then pointed {before} to {value} and {value} to {after}.", index)));
     }
 
     public void RemoveLastNode()
@@ -137,7 +137,7 @@ public class LinkedListManager : MonoBehaviour
         }
         if (index >= nodes.Count)
         {
-            ARGuide.Say($"There's no node {index + 1}. The list has {nodes.Count} node{(nodes.Count == 1 ? "" : "s")}.");
+            ARGuide.Say($"Position {index} is empty. The last node is at position {nodes.Count - 1}.");
             return;
         }
         int before = index > 0 ? values[index - 1] : -1;

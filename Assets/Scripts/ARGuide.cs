@@ -6,9 +6,10 @@ using UnityEngine.UI;
 using Vuforia;
 using Image = UnityEngine.UI.Image;
 
-// The AR scene's on-screen layer, built to the v4 design: a scan prompt until the marker is found,
-// a "How to use" card the first time, then the controls (back, add/remove with a count, shape picker,
-// Go to Quiz) and short messages. The new buttons trigger the scene's original buttons, which are hidden.
+// The AR scene's on-screen layer, built to the "AR scenes" design: a scan prompt until the marker is found,
+// a "How to use" card the first time, then the same layout for every topic: back and a compact mission
+// card at the top left, the shape picker at the top right, one control dock at the bottom left with a
+// short message above it, and Go to Quiz at the bottom right. The scene's original buttons are hidden.
 public class ARGuide : MonoBehaviour
 {
     private static readonly Vector2 Landscape = new Vector2(844, 390);
@@ -35,6 +36,9 @@ public class ARGuide : MonoBehaviour
     private GameObject stepsChip;
     private TextMeshProUGUI positionText;
     private int position;
+    private LayoutElement toastWidth;
+    private Coroutine hideToast;
+    private ArrayManager arrayManager;
 
     // Managers report problems (full, empty, gaps) through this; shown in red
     public static void Say(string message)
@@ -89,6 +93,9 @@ public class ARGuide : MonoBehaviour
         int n = count();
         countText.text = $"{n}/{capacity}";
         FollowEnd();
+        // The array marks the slot Insert and Delete will use
+        if (arrayManager != null)
+            arrayManager.SelectSlot(atEnd ? Mathf.Min(n, capacity - 1) : position);
         addGroup.alpha = n >= capacity ? 0.45f : 1f;
         removeGroup.alpha = n <= 0 ? 0.45f : 1f;
     }
@@ -125,11 +132,21 @@ public class ARGuide : MonoBehaviour
         if (toast == null)
             return;
         toastText.text = message;
+        toastWidth.preferredWidth = Mathf.Min(toastText.GetPreferredValues(message).x + 2, 440);
         captionIcon.color = error ? DK.Red : DK.Indigo700;
         captionMark.text = error ? "!" : "i";
         stepsChip.SetActive(steps >= 0);
         stepsText.text = steps == 1 ? "1 step" : $"{steps} steps";
         toast.SetActive(true);
+        if (hideToast != null)
+            StopCoroutine(hideToast);
+        hideToast = StartCoroutine(HideToast(steps >= 0 ? 6f : 4f));
+    }
+
+    private IEnumerator HideToast(float seconds)
+    {
+        yield return new WaitForSeconds(seconds);
+        toast.SetActive(false);
     }
 
     private void ShowSearching()
@@ -162,7 +179,7 @@ public class ARGuide : MonoBehaviour
         if (originalShapes != null)
             originalShapes.gameObject.SetActive(false);
 
-        if (FindObjectOfType<ArrayManager>() is ArrayManager array) { count = () => array.Count; capacity = array.Capacity; }
+        if (FindObjectOfType<ArrayManager>() is ArrayManager array) { count = () => array.Count; capacity = array.Capacity; arrayManager = array; }
         else if (FindObjectOfType<LinkedListManager>() is LinkedListManager list) { count = () => list.Count; capacity = list.Capacity; }
         else if (FindObjectOfType<StackManager>(true) is StackManager stack) { count = () => stack.Count; capacity = stack.Capacity; }
         else if (FindObjectOfType<QueueManager>() is QueueManager queue) { count = () => queue.Count; capacity = queue.Capacity; }
@@ -194,7 +211,7 @@ public class ARGuide : MonoBehaviour
 
         // Back is always there, as the scene's exit button was
         Image back = DK.Box(root, DK.White, 14, "Back");
-        DK.At(back, 20, 20, 52, 52);
+        DK.At(back, 16, 16, 48, 48);
         DK.MakeButton(back, () => originalBack?.onClick.Invoke());
         RectTransform arrow = DK.Icon(back.transform, "arrow-left", 22, DK.Indigo900);
         DK.Anchor(arrow, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(22, 22));
@@ -243,47 +260,48 @@ public class ARGuide : MonoBehaviour
         controls = group.gameObject;
 
         string[] labels = topicName == "Stack" ? new[] { "Push", "Pop" }
-            : topicName == "Queue" ? new[] { "Enqueue", "Dequeue" } : new[] { "Add", "Remove" };
+            : topicName == "Queue" ? new[] { "Enqueue", "Dequeue" } : new[] { "Insert", "Delete" };
         string countLabel = topicName == "Array" ? "FILLED" : topicName == "Linked List" ? "NODES" : "SIZE";
+        bool positional = topicName == "Array" || topicName == "Linked List";
 
-        Image bar = DK.Box(group, DK.White, 14, "Actions");
-        DK.At(bar, 82, 20, 0, 52);
-        HorizontalLayoutGroup row = DK.Line(bar.gameObject, 4);
+        // One dock at the bottom left: [position stepper] [main action] [second action] | count
+        Image dock = DK.Box(group, DK.White, 16, "Dock");
+        DK.Anchor(dock, new Vector2(0, 0), new Vector2(16, 16), new Vector2(0, 56));
+        HorizontalLayoutGroup row = DK.Line(dock.gameObject, 4);
         row.padding = new RectOffset(4, 4, 4, 4);
-        bar.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        dock.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        // Array and linked list: pick a position, then Insert or Delete there. Stack and queue keep their two operations.
-        if (topicName == "Array" || topicName == "Linked List")
-            BuildPositionControls(bar.transform);
-        else
-        {
-            Button add = DK.Pill(bar.transform, labels[0], DK.Indigo700, DK.White, 10, 16, () => originalAdd?.onClick.Invoke(), "plus");
-            DK.Size(add, labels[0].Length * 10 + 64, 44);
-            addGroup = DK.Get<CanvasGroup>(add);
-            controlRefs["add"] = (RectTransform)add.transform;
-            Button remove = DK.Pill(bar.transform, labels[1], DK.Clear, DK.Indigo900, 10, 16, () => originalRemove?.onClick.Invoke(), "minus");
-            DK.Size(remove, labels[1].Length * 10 + 64, 44);
-            removeGroup = DK.Get<CanvasGroup>(remove);
-            controlRefs["remove"] = (RectTransform)remove.transform;
-        }
+        if (positional)
+            BuildStepper(dock.transform);
 
-        Image divider = DK.Box(bar.transform, DK.Lavender300, 0, "Divider");
+        System.Action main = positional ? Insert : () => originalAdd?.onClick.Invoke();
+        System.Action second = positional ? Delete : () => originalRemove?.onClick.Invoke();
+        Button add = DK.Pill(dock.transform, labels[0], DK.Indigo700, DK.White, 12, 15, main, "plus");
+        DK.Size(add, labels[0].Length * 9 + 60, 48);
+        addGroup = DK.Get<CanvasGroup>(add);
+        controlRefs[positional ? "insert" : "add"] = (RectTransform)add.transform;
+        Button remove = DK.Pill(dock.transform, labels[1], DK.Clear, DK.Indigo900, 12, 15, second, "minus");
+        DK.Size(remove, labels[1].Length * 9 + 56, 48);
+        removeGroup = DK.Get<CanvasGroup>(remove);
+        controlRefs[positional ? "delete" : "remove"] = (RectTransform)remove.transform;
+
+        Image divider = DK.Box(dock.transform, DK.Lavender300, 0, "Divider");
         DK.Size(divider, 1, 28);
-        RectTransform counter = UiKit.Create("Count", bar.transform);
-        DK.Column(counter.gameObject, 3, new RectOffset(4, 12, 6, 0)).childForceExpandWidth = false;
-        DK.Caps(counter, countLabel, 10, DK.Lavender500);
-        countText = DK.Text(counter, "0/5", 17, DK.Indigo900, true);
+        RectTransform counter = UiKit.Create("Count", dock.transform);
+        DK.Column(counter.gameObject, 3, new RectOffset(4, 12, 9, 0)).childForceExpandWidth = false;
+        DK.Caps(counter, countLabel, 9, DK.Lavender500);
+        countText = DK.Text(counter, "0/5", 16, DK.Indigo900, true);
         countText.enableWordWrapping = false;
 
-        // Before the shape picker, so its open list draws over the mission card
+        // Compact mission card at the top left, beside Back; before the shape picker so its list draws on top
         missions = gameObject.AddComponent<ARMissions>();
         missions.Build(group, topicName, count, controlRefs, () => originalQuiz?.onClick.Invoke());
 
         if (originalShapes != null)
             BuildShapePicker(group);
 
-        Button quiz = DK.Pill(group, "Go to Quiz", DK.Indigo700, DK.White, 14, 17, () => originalQuiz?.onClick.Invoke(), null, "arrow-right");
-        DK.Anchor(quiz, new Vector2(1, 0), new Vector2(-20, 20), new Vector2(190, 56));
+        Button quiz = DK.Pill(group, "Go to Quiz", DK.Indigo700, DK.White, 16, 16, () => originalQuiz?.onClick.Invoke(), null, "arrow-right");
+        DK.Anchor(quiz, new Vector2(1, 0), new Vector2(-16, 16), new Vector2(160, 56));
         controls.SetActive(false);
     }
 
@@ -306,31 +324,36 @@ public class ARGuide : MonoBehaviour
 
     private bool atEnd = true;
     private bool IsArray => topicName == "Array";
-    private int MinPosition => IsArray ? 0 : 1;
-    private int EndPosition => (count != null ? count() : 0) + (IsArray ? 0 : 1);
+    private int MinPosition => 0;
+    private int EndPosition => count != null ? count() : 0;
 
-    private void BuildPositionControls(Transform bar)
+    // ‹ INDEX › (or NODE) on a light block
+    private void BuildStepper(Transform dock)
     {
-        Button less = DK.Pill(bar, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(-1), "minus");
-        DK.Size(less, 40, 44);
-        controlRefs["index-minus"] = (RectTransform)less.transform;
-        RectTransform labelCell = UiKit.Create("Position", bar);
-        DK.Column(labelCell.gameObject, 2, new RectOffset(4, 4, 6, 0), TextAnchor.UpperCenter).childForceExpandWidth = false;
-        DK.Caps(labelCell, IsArray ? "INDEX" : "NODE", 10, DK.Lavender500, TextAlignmentOptions.Center);
-        positionText = DK.Text(labelCell, "", 17, DK.Indigo900, true, TextAlignmentOptions.Center);
-        DK.Size(positionText, 48, -1);
-        Button more = DK.Pill(bar, "", DK.Lavender100, DK.Indigo900, 10, 15, () => Step(1), "plus");
-        DK.Size(more, 40, 44);
-        controlRefs["index-plus"] = (RectTransform)more.transform;
+        Image block = DK.Box(dock, DK.Lavender100, 12, "Stepper");
+        DK.Size(block, -1, 48);
+        DK.Line(block.gameObject, 0);
 
-        Button insert = DK.Pill(bar, "Insert", DK.Indigo700, DK.White, 10, 16, Insert, "plus");
-        DK.Size(insert, 112, 44);
-        addGroup = DK.Get<CanvasGroup>(insert);
-        controlRefs["insert"] = (RectTransform)insert.transform;
-        Button delete = DK.Pill(bar, "Delete", DK.Clear, DK.Indigo900, 10, 16, Delete, "minus");
-        DK.Size(delete, 112, 44);
-        removeGroup = DK.Get<CanvasGroup>(delete);
-        controlRefs["delete"] = (RectTransform)delete.transform;
+        Image less = DK.Box(block.transform, DK.Clear, 12, "Less");
+        DK.Size(less, 40, 48);
+        DK.MakeButton(less, () => Step(-1));
+        RectTransform left = DK.Icon(less.transform, "chevron-left", 16, DK.Indigo900);
+        DK.Anchor(left, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(16, 16));
+        controlRefs["index-minus"] = less.rectTransform;
+
+        RectTransform labelCell = UiKit.Create("Position", block.transform);
+        DK.Size(labelCell, 58, 48);
+        DK.Column(labelCell.gameObject, 3, new RectOffset(0, 0, 9, 0), TextAnchor.UpperCenter).childForceExpandWidth = false;
+        DK.Caps(labelCell, IsArray ? "INDEX" : "NODE", 9, DK.Lavender500, TextAlignmentOptions.Center);
+        positionText = DK.Text(labelCell, "", 17, DK.Indigo900, true, TextAlignmentOptions.Center);
+        DK.Size(positionText, 58, -1);
+
+        Image more = DK.Box(block.transform, DK.Clear, 12, "More");
+        DK.Size(more, 40, 48);
+        DK.MakeButton(more, () => Step(1));
+        RectTransform right = DK.Icon(more.transform, "chevron-right", 16, DK.Indigo900);
+        DK.Anchor(right, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(16, 16));
+        controlRefs["index-plus"] = more.rectTransform;
 
         position = EndPosition;
         ShowPosition();
@@ -376,7 +399,7 @@ public class ARGuide : MonoBehaviour
         {
             LinkedListManager list = FindObjectOfType<LinkedListManager>();
             if (atEnd) list.AddNode(shape);
-            else list.InsertAt(position - 1, shape);
+            else list.InsertAt(position, shape);
         }
     }
 
@@ -392,7 +415,7 @@ public class ARGuide : MonoBehaviour
         {
             LinkedListManager list = FindObjectOfType<LinkedListManager>();
             if (atEnd) list.RemoveLastNode();
-            else list.DeleteAt(position - 1);
+            else list.DeleteAt(position);
         }
     }
 
@@ -410,17 +433,17 @@ public class ARGuide : MonoBehaviour
     private void BuildShapePicker(RectTransform group)
     {
         Image button = DK.Box(group, DK.White, 14, "Shape");
-        DK.Anchor(button, new Vector2(1, 1), new Vector2(-20, -20), new Vector2(184, 52));
+        DK.Anchor(button, new Vector2(1, 1), new Vector2(-16, -16), new Vector2(168, 48));
         DK.MakeButton(button, () => shapeList.SetActive(!shapeList.activeSelf));
         TextMeshProUGUI caps = DK.Caps(button.transform, "SHAPE", 10, DK.Lavender500);
-        DK.Anchor(caps, new Vector2(0, 0.5f), new Vector2(16, 0), new Vector2(50, 12));
+        DK.Anchor(caps, new Vector2(0, 0.5f), new Vector2(14, 0), new Vector2(50, 12));
         shapeLabel = DK.Text(button.transform, "", 16, DK.Indigo900, false, TextAlignmentOptions.MidlineLeft);
-        DK.Anchor(shapeLabel, new Vector2(0, 0.5f), new Vector2(72, 0), new Vector2(80, 30));
+        DK.Anchor(shapeLabel, new Vector2(0, 0.5f), new Vector2(66, 0), new Vector2(76, 30));
         RectTransform chevron = DK.Icon(button.transform, "chevron-down", 18, DK.Indigo900);
-        DK.Anchor(chevron, new Vector2(1, 0.5f), new Vector2(-14, 0), new Vector2(18, 18));
+        DK.Anchor(chevron, new Vector2(1, 0.5f), new Vector2(-12, 0), new Vector2(16, 16));
 
         Image list = DK.Box(group, DK.White, 14, "ShapeList");
-        DK.Anchor(list, new Vector2(1, 1), new Vector2(-20, -78), new Vector2(184, 0));
+        DK.Anchor(list, new Vector2(1, 1), new Vector2(-16, -70), new Vector2(168, 0));
         DK.Column(list.gameObject, 2, new RectOffset(6, 6, 6, 6));
         list.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         shapeList = list.gameObject;
@@ -429,7 +452,7 @@ public class ARGuide : MonoBehaviour
         {
             int index = i;
             Image option = DK.Box(list.transform, DK.Clear, 10, "Option");
-            DK.Size(option, -1, 42);
+            DK.Size(option, -1, 40);
             TextMeshProUGUI text = DK.Text(option.transform, options[i].text, 15, DK.Indigo900, false, TextAlignmentOptions.MidlineLeft);
             DK.Stretch(text.rectTransform, 12, 0, 12, 0);
             DK.MakeButton(option, () => PickShape(index));
@@ -449,26 +472,26 @@ public class ARGuide : MonoBehaviour
 
     private void BuildToast()
     {
-        Image card = DK.Box(root, DK.White, 14, "Caption");
-        DK.Anchor(card, new Vector2(0.5f, 0), new Vector2(0, 20), new Vector2(400, 0));
+        Image card = DK.Box(root, DK.White, 12, "Toast");
+        DK.Anchor(card, new Vector2(0, 0), new Vector2(16, 84), new Vector2(0, 0));
         HorizontalLayoutGroup row = DK.Line(card.gameObject, 10);
-        row.padding = new RectOffset(12, 12, 10, 10);
+        row.padding = new RectOffset(10, 12, 9, 9);
         row.childAlignment = TextAnchor.MiddleLeft;
-        card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        DK.Size(card, -1, -1).minHeight = 56;
+        ContentSizeFitter fit = card.gameObject.AddComponent<ContentSizeFitter>();
+        fit.horizontalFit = fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        captionIcon = DK.Box(card.transform, DK.Indigo700, 13, "Icon");
-        DK.Size(captionIcon, 26, 26);
-        captionMark = DK.Text(captionIcon.transform, "i", 15, DK.White, true, TextAlignmentOptions.Center);
+        captionIcon = DK.Box(card.transform, DK.Indigo700, 11, "Icon");
+        DK.Size(captionIcon, 22, 22);
+        captionMark = DK.Text(captionIcon.transform, "i", 13, DK.White, true, TextAlignmentOptions.Center);
         UiKit.Stretch(captionMark.rectTransform, Vector2.zero, Vector2.one);
 
         toastText = DK.Text(card.transform, "", 14, DK.Indigo900, true);
-        DK.Size(toastText, -1, -1, 1);
+        toastWidth = DK.Size(toastText, 100, -1);
 
         Image chip = DK.Box(card.transform, DK.Lavender100, 8, "Steps");
-        DK.Size(chip, -1, 26);
+        DK.Size(chip, -1, 24);
         HorizontalLayoutGroup pad = DK.Line(chip.gameObject, 0, TextAnchor.MiddleCenter);
-        pad.padding = new RectOffset(8, 8, 5, 5);
+        pad.padding = new RectOffset(8, 8, 4, 4);
         stepsText = DK.Text(chip.transform, "", 12, DK.Indigo700, true, TextAlignmentOptions.Center);
         stepsText.enableWordWrapping = false;
         stepsChip = chip.gameObject;
@@ -490,7 +513,7 @@ public class ARGuide : MonoBehaviour
         card.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         DK.Caps(card.transform, "HOW TO USE", 11, DK.Lavender500);
         DK.Text(card.transform, controlsHint, 17, DK.Indigo900);
-        DK.Text(card.transform, "After each action, the caption at the bottom explains what happened and counts its steps: the pointer changes, shifts or links walked it took. Try the missions on the right: the controls to use glow orange.", 14, DK.Indigo500);
+        DK.Text(card.transform, "After each action, a short message above the controls explains what happened and counts its steps. The missions are at the top left; the controls to use glow orange.", 14, DK.Indigo500);
         RectTransform buttonRow = UiKit.Create("Buttons", card.transform);
         DK.Line(buttonRow.gameObject, 0, TextAnchor.MiddleRight);
         Button gotIt = DK.Pill(buttonRow, "Got it", DK.Indigo700, DK.White, 12, 15, () => howTo.SetActive(false));

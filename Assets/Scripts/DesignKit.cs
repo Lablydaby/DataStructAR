@@ -347,6 +347,10 @@ public static class DK
                 Bar(-0.27f, -0.27f, 0.27f, 0.27f); Bar(-0.27f, 0.27f, 0.27f, -0.27f); break;
             case "chevron-down":
                 Bar(-0.27f, 0.12f, 0, -0.15f); Bar(0, -0.15f, 0.27f, 0.12f); break;
+            case "chevron-left":
+                Bar(0.12f, -0.27f, -0.15f, 0); Bar(-0.15f, 0, 0.12f, 0.27f); break;
+            case "chevron-right":
+                Bar(-0.12f, -0.27f, 0.15f, 0); Bar(0.15f, 0, -0.12f, 0.27f); break;
             case "chevron-up":
                 Bar(-0.27f, -0.12f, 0, 0.15f); Bar(0, 0.15f, 0.27f, -0.12f); break;
             case "scan":

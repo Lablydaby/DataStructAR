@@ -42,6 +42,7 @@ public class StackManager : MonoBehaviour
 
 
     private bool initialStackDone;
+    private const int StartingBlocks = 0; // The stack starts empty; students push the first block
 
     void Awake()
     {
@@ -89,7 +90,7 @@ public class StackManager : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
 
-        while (stackObjects.Count < 3)
+        while (stackObjects.Count < StartingBlocks)
         {
             // Wait out the push cooldown so each initial push goes through
             yield return new WaitWhile(() => isPushOnCooldown);

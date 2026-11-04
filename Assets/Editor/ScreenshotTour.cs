@@ -278,60 +278,64 @@ public static class ScreenshotTour
             Mission();
         }
 
-        // Array, through the one-row controls: Insert on end x3, then index 0 Insert, index 1 Delete
+        // Array: Insert on end x3; index 1 Insert; index 0 Delete
         Start("Array");
         Do(0.3f, () => Guide().PressInsert());
         Do(0.2f, ARDemo.FrameUpright);
-        Shot(1.0f, "array-mission-1-progress");
+        Shot(1.0f, "array-mission-1");
         Do(0.2f, () => Guide().PressInsert()); Do(0.9f, () => Guide().PressInsert());
-        Shot(1.0f, "array-mission-1-complete"); Mission(); Next(); Mission();
-        Shot(0.3f, "array-mission-2-highlight");
-        Do(0.2f, () => { Guide().SetPosition(0); Guide().PressInsert(); });
-        Do(2.0f, () => { }); Mission(); Next();
-        Do(0.2f, () => { Guide().SetPosition(1); Guide().PressDelete(); });
-        Do(1.6f, () => { }); Mission(); Next(); Mission();
-        Shot(0.3f, "array-missions-done");
+        Do(1.0f, () => { }); Mission();
+        Shot(0.2f, "array-mission-1-done");
+        Next(); Mission();
+        Do(0.2f, () => { Guide().SetPosition(1); Guide().PressInsert(); });
+        Do(2.0f, () => { }); Mission();
+        Shot(0.2f, "array-mission-2-done");
+        Next();
+        Do(0.2f, () => { Guide().SetPosition(0); Guide().PressDelete(); });
+        Do(1.6f, () => { }); Mission();
+        Shot(0.2f, "array-mission-3-done");
 
-        // Linked list: Insert on end x3, node 1 Insert (head), node 3 Insert (middle), node 2 Delete
+        // Linked list: Insert on end x3; position 1 Insert; position 0 Delete (the head)
         Start("LinkedList");
         for (int i = 0; i < 3; i++) Do(0.6f, () => Guide().PressInsert());
         Do(0.5f, () => { }); Mission(); Next(); Mission();
         Do(0.2f, ARDemo.FrameUpright);
-        Shot(0.3f, "linkedlist-mission-2-highlight");
+        Shot(0.3f, "linkedlist-mission-2");
         Do(0.2f, () => { Guide().SetPosition(1); Guide().PressInsert(); });
         Do(0.8f, () => { }); Mission(); Next();
-        Do(0.2f, () => { Guide().SetPosition(3); Guide().PressInsert(); });
-        Shot(1.0f, "linkedlist-insert-middle");
-        Do(0.2f, () => { Guide().SetPosition(2); Guide().PressDelete(); });
+        Do(0.2f, () => { Guide().SetPosition(0); Guide().PressDelete(); });
         Do(0.8f, () => { }); Mission();
-        // A narrower 16:9 phone: everything should still fit
-        Do(0.2f, () => SetGameViewSize(1280, 720));
-        Do(0.4f, ARDemo.FrameUpright);
-        Shot(0.3f, "linkedlist-16x9-mission-3-complete");
-        Do(0.2f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
-        Next(); Mission();
+        Shot(0.2f, "linkedlist-mission-3-done");
 
+        // Stack (starts empty): push 3; pop to 1; pop the empty stack
         Start("Stack");
-        Do(2.5f, () => Stk().Push(0)); Do(0.8f, () => Stk().Push(0));
-        Do(0.5f, () => { }); Mission(); Next();
-        Do(0.3f, () => Stk().Push(0)); Mission(); Next();
-        for (int i = 0; i < 2; i++) Do(0.7f, () => Stk().Pop());
-        Do(0.2f, ARDemo.FrameUpright);
-        Shot(0.3f, "stack-mission-3-progress");
+        for (int i = 0; i < 3; i++) Do(0.8f, () => Stk().Push(0));
+        Do(0.8f, () => { }); Mission(); Next(); Mission();
         for (int i = 0; i < 2; i++) Do(0.7f, () => Stk().Pop());
         Do(0.5f, () => { }); Mission();
-        Shot(0.3f, "stack-mission-3-complete");
-        Next(); Mission();
+        Do(0.2f, ARDemo.FrameUpright);
+        Shot(0.3f, "stack-mission-2-done");
+        Next();
+        Do(0.3f, () => Stk().Pop()); Do(0.7f, () => Stk().Pop());
+        Do(0.5f, () => { }); Mission();
+        Shot(0.2f, "stack-mission-3-done");
 
+        // Queue: enqueue 3; dequeue 2; enqueue into a full queue
         Start("queue");
         for (int i = 0; i < 3; i++) Do(1.3f, () => Que().Enqueue(0));
         Do(1.3f, () => { }); Mission(); Next();
-        Do(0.3f, () => Que().Dequeue());
+        Do(0.3f, () => Que().Dequeue()); Do(0.8f, () => Que().Dequeue());
         Do(0.8f, () => { }); Mission(); Next();
-        Do(0.3f, () => Que().Enqueue(0)); Do(1.3f, () => Que().Enqueue(0)); Do(1.3f, () => Que().Enqueue(0));
-        Do(1.4f, () => { }); Mission(); Next(); Mission();
+        for (int i = 0; i < 4; i++) Do(1.3f, () => Que().Enqueue(0));
+        Do(1.3f, () => Que().Enqueue(0));
+        Do(0.5f, () => { }); Mission();
         Do(0.2f, ARDemo.FrameUpright);
-        Shot(0.3f, "queue-missions-done");
+        Shot(0.3f, "queue-mission-3-done");
+        // A narrower 16:9 phone: everything should still fit
+        Do(0.2f, () => SetGameViewSize(1280, 720));
+        Do(0.4f, ARDemo.FrameUpright);
+        Shot(0.3f, "queue-16x9");
+        Do(0.2f, () => SetGameViewSize(PortraitHeight, PortraitWidth));
 
         Do(0.5f, () => Debug.Log("[Check] done"));
         return list;
