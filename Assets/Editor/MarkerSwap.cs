@@ -45,14 +45,12 @@ public static class MarkerSwap
     }
 
     // How far to move each scene's start point, in card units (x across, y off the card, z up the card),
-    // measured with the Upright Markers capture at 5 items, so the content sits in the card's calm centre
+    // measured with ScreenshotTour.RunMeasureAndQuit at full capacity, so the content sits centred in the
+    // card's white area. Re-measure and set these again whenever the cards or layouts change.
     private static readonly (string scene, Vector3 shift)[] Recentering =
     {
-        ("Assets/Scenes/AR/Array.unity", new Vector3(-0.127f, 0.06f, -0.062f)),
-        ("Assets/Scenes/AR/LinkedList.unity", new Vector3(-0.072f, 0.073f, -0.033f)),
-        ("Assets/Scenes/AR/queue.unity", new Vector3(-0.044f, 0.09f, 0.015f)),
-        // Base at the bottom of the calm area; the stack grows from there either way the card faces
-        ("Assets/Scenes/AR/Stack.unity", new Vector3(0.004f, 0f, 0.106f)),
+        ("Assets/Scenes/AR/Array.unity", new Vector3(0.045f, 0f, 0f)),
+        ("Assets/Scenes/AR/LinkedList.unity", new Vector3(-0.05f, 0f, 0f)),
     };
 
     [MenuItem("Build/Center Content On Stage Cards")]

@@ -1,7 +1,7 @@
 """Generates the four AR marker cards (Array, Linked List, Stack, Queue).
 
-Each card is a "stage": a dense, irregular, high-contrast frame that gives Vuforia plenty to
-track, around a calm centre where the 3D model appears. The topic name and icon sit in one
+Each card is a "stage": a calm, wide white centre where the 3D model appears, inside a narrow frame
+of a few large, high-contrast shapes that gives Vuforia enough to track. The topic name and icon sit in one
 corner. Every card has its own accent colour and frame shapes so they never look alike.
 
 Usage: python make_markers.py <output folder>
@@ -17,9 +17,13 @@ from PIL import Image, ImageDraw, ImageFont
 # Same proportions as the current Vuforia targets (1 : 0.72)
 WIDTH, HEIGHT = 2000, 1440
 SCALE = 2  # Drawn at double size, then scaled down for smooth edges
-# Frame thickness: thinner at the sides so the calm centre fits a full row of 5 items
-BAND_X = 170
-BAND_Y = 330
+# Frame thickness: narrow, so the white centre (about 89% x 52% of the card) fits the 3D content
+BAND_X = 110
+BAND_Y = 200
+
+# Fewer, larger shapes keep the frame calm; a few small marks add corners for tracking
+SHAPES = 110
+SPRINKLES = 40
 CENTRE_RADIUS = 64
 
 # App branding (matches UiKit)
@@ -60,8 +64,8 @@ def rotated(points, cx, cy, angle):
 
 
 def shape_colour(rng, accent):
-    # Mostly light shapes on the dark band for contrast, with accent and ink for variety
-    return rng.choices([WHITE, LAVENDER, accent, INK], weights=[4, 3, 3, 2])[0]
+    # Two main colours, white and the topic accent, on the purple band
+    return rng.choices([WHITE, accent, LAVENDER], weights=[5, 4, 1])[0]
 
 
 def draw_shape(draw, rng, kind, accent):
@@ -78,11 +82,11 @@ def draw_shape(draw, rng, kind, accent):
 
     if kind == "array":
         # Axis-aligned cells of mixed sizes, like scattered array slots
-        w, h = rng.uniform(22, 150), rng.uniform(22, 150)
+        w, h = rng.uniform(40, 170), rng.uniform(40, 170)
         poly([(s(x), s(y)), (s(x + w), s(y)), (s(x + w), s(y + h)), (s(x), s(y + h))])
     elif kind == "linkedlist":
         # Nodes, some joined to a neighbour by a link with an end dot
-        r = rng.uniform(12, 72)
+        r = rng.uniform(22, 80)
         box = [s(x - r), s(y - r), s(x + r), s(y + r)]
         if filled:
             draw.ellipse(box, fill=colour)
@@ -97,12 +101,12 @@ def draw_shape(draw, rng, kind, accent):
             draw.ellipse([s(ex - d), s(ey - d), s(ex + d), s(ey + d)], fill=colour)
     elif kind == "stack":
         # Slightly tilted bars of mixed length, like loose stacked blocks
-        w, h = rng.uniform(60, 260), rng.uniform(16, 54)
+        w, h = rng.uniform(90, 300), rng.uniform(26, 60)
         angle = math.radians(rng.uniform(-9, 9))
         poly(rotated([(-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2)], x, y, angle))
     else:
         # Arrows and chevrons pointing every which way
-        size = rng.uniform(26, 120)
+        size = rng.uniform(50, 140)
         angle = rng.uniform(0, 2 * math.pi)
         if rng.random() < 0.5:
             points = [(-size / 2, -size / 2), (size / 2, 0), (-size / 2, size / 2)]
@@ -116,9 +120,9 @@ def draw_shape(draw, rng, kind, accent):
 
 def draw_sprinkles(draw, rng, accent):
     # Small crosses and dots everywhere in the band add sharp corners for tracking
-    for _ in range(260):
+    for _ in range(SPRINKLES):
         x, y = random_band_point(rng)
-        colour = rng.choice([WHITE, LAVENDER, accent, INK])
+        colour = rng.choice([WHITE, accent])
         size = rng.uniform(6, 20)
         if rng.random() < 0.5:
             w = s(rng.uniform(3, 6))
@@ -169,7 +173,7 @@ def make_card(kind, title, accent, seed):
     image = Image.new("RGB", (s(WIDTH), s(HEIGHT)), BRAND)
     draw = ImageDraw.Draw(image)
 
-    for _ in range(330):
+    for _ in range(SHAPES):
         draw_shape(draw, rng, kind, accent)
     draw_sprinkles(draw, rng, accent)
 
@@ -180,21 +184,21 @@ def make_card(kind, title, accent, seed):
     draw.rounded_rectangle(centre, radius=s(CENTRE_RADIUS), fill=CENTRE)
 
     # Topic label in the top-left corner: icon + name on a white pill
-    bold = ImageFont.truetype(str(FONT_DIR / "Poppins-Bold.ttf"), s(86))
+    bold = ImageFont.truetype(str(FONT_DIR / "Poppins-Bold.ttf"), s(68))
     text_w = draw.textlength(title, font=bold) / SCALE
-    icon = 92
-    pad = 40
-    pill = [52, 52, 52 + pad + icon + 28 + text_w + pad, 52 + 150]
+    icon = 72
+    pad = 32
+    pill = [40, 38, 40 + pad + icon + 22 + text_w + pad, 38 + 120]
     # Dark outline keeps the pill separate from light shapes behind it
-    draw.rounded_rectangle([s(v) for v in pill], radius=s(75), fill=WHITE, outline=INK, width=s(8))
-    draw_icon(draw, kind, pill[0] + pad, pill[1] + (150 - icon) / 2, icon, accent)
-    draw.text((s(pill[0] + pad + icon + 28), s(pill[1] + 75)), title, font=bold, fill=BRAND, anchor="lm")
+    draw.rounded_rectangle([s(v) for v in pill], radius=s(60), fill=WHITE, outline=INK, width=s(6))
+    draw_icon(draw, kind, pill[0] + pad, pill[1] + (120 - icon) / 2, icon, accent)
+    draw.text((s(pill[0] + pad + icon + 22), s(pill[1] + 60)), title, font=bold, fill=BRAND, anchor="lm")
 
     # App name in the bottom-right corner
-    small = ImageFont.truetype(str(FONT_DIR / "Poppins-SemiBold.ttf"), s(44))
+    small = ImageFont.truetype(str(FONT_DIR / "Poppins-SemiBold.ttf"), s(38))
     name = "DataStructAR"
     name_w = draw.textlength(name, font=small) / SCALE
-    tag = [WIDTH - 52 - name_w - 64, HEIGHT - 52 - 92, WIDTH - 52, HEIGHT - 52]
+    tag = [WIDTH - 40 - name_w - 56, HEIGHT - 40 - 80, WIDTH - 40, HEIGHT - 40]
     draw.rounded_rectangle([s(v) for v in tag], radius=s(46), fill=INK)
     draw.text((s((tag[0] + tag[2]) / 2), s((tag[1] + tag[3]) / 2)), name, font=small, fill=WHITE, anchor="mm")
 

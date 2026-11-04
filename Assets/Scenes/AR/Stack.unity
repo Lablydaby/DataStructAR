@@ -2748,7 +2748,6 @@ MonoBehaviour:
   topicName: Stack
   controlsHint: Pick a shape, then tap Push to add it on top or Pop to remove the
     top block. Tap Go to Quiz when you're ready.
-  hintDuration: 6
 --- !u!4 &1647487091
 Transform:
   m_ObjectHideFlags: 0

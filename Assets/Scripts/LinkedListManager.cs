@@ -266,6 +266,16 @@ public class LinkedListManager : MonoBehaviour
     // Labels follow their node, sit above it whichever way the card faces, and turn toward the camera
     private void AttachLabel(GameObject label, Transform follow, float alongRow, float above)
     {
+        // Same look as the other AR labels: dark, centred, with a white edge so it reads on the white card
+        TextMeshPro text = label.GetComponentInChildren<TextMeshPro>();
+        if (text != null)
+        {
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = ARText.Ink;
+            text.outlineWidth = 0.3f;
+            text.outlineColor = Color.white;
+        }
+
         ARLabel arLabel = label.AddComponent<ARLabel>();
         arLabel.follow = follow;
         arLabel.marker = startPosition;

@@ -42,6 +42,7 @@ public static class ScreenshotTour
             QueueOverflowMode => BuildQueueOverflowSteps(),
             UprightMarkersMode => BuildUprightMarkerSteps(),
             ARChecksMode => BuildARCheckSteps(),
+            "Measure" => BuildMeasureSteps(),
             _ => BuildSteps(),
         };
 
@@ -158,6 +159,38 @@ public static class ScreenshotTour
         Shot(0.8f, "queue-dequeued-twice");
         Do(0.2f, () => Que().Enqueue(1));
         Shot(1.4f, "queue-wrapped");
+        return list;
+    }
+
+    // Fills each AR scene to capacity and logs where the content sits on the card ([Layout] lines)
+    public static void RunMeasureAndQuit()
+    {
+        SessionState.SetBool(QuitKey, true);
+        Start("Measure", OutputFolder + "/Measure", "Assets/Scenes/MainMenu.unity", PortraitHeight, PortraitWidth);
+    }
+
+    private static List<(float, Action)> BuildMeasureSteps()
+    {
+        List<(float, Action)> list = new List<(float, Action)>();
+        void Do(float wait, Action action) => list.Add((wait, action));
+        (string scene, Action fill)[] scenes =
+        {
+            ("Array", () => Object.FindObjectOfType<ArrayManager>().AddElement(0)),
+            ("LinkedList", () => Object.FindObjectOfType<LinkedListManager>().AddNode(0)),
+            ("Stack", () => Object.FindObjectOfType<StackManager>().Push(0)),
+            ("queue", () => Object.FindObjectOfType<QueueManager>().Enqueue(0)),
+        };
+        foreach ((string scene, Action fill) in scenes)
+        {
+            Do(0.5f, () => SceneManager.LoadScene(scene));
+            Do(2.5f, ARDemo.PretendUprightMarkerFound);
+            Do(0.2f, () => Object.FindObjectOfType<ARGuide>().DismissHowTo());
+            for (int i = 0; i < 6; i++)
+                Do(1.4f, fill);
+            Do(2.0f, ARDemo.FrameUpright);
+            Do(0.1f, () => ARDemo.LogContentBounds(scene));
+            Do(0.1f, () => Capture(scene + "-full"));
+        }
         return list;
     }
 

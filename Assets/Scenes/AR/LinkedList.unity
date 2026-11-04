@@ -173,10 +173,11 @@ MonoBehaviour:
   - {fileID: 6979107840868165538, guid: 7e11117ba70eec74581855f0c31f625e, type: 3}
   startPosition: {fileID: 369286260}
   nodeSpacing: 0.15
+  slideDuration: 0.3
   nodeListParent: {fileID: 1474341993}
   nullNodePrefab: {fileID: 963801997710078720, guid: 759291f2b7b01cf4ba358bbc6e366702, type: 3}
   headMarkerPrefab: {fileID: 4229963424917317353, guid: 60e23bc1cc9c1644e9148ef2cd59d5af, type: 3}
-  headOffset: {x: -0.1, y: 0.07, z: 0}
+  headOffset: {x: 0, y: -0.075, z: 0}
   nullOffset: {x: 0.03, y: 0, z: 0}
 --- !u!1 &119263390
 GameObject:
@@ -674,7 +675,7 @@ Transform:
   m_GameObject: {fileID: 369286259}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.2538793, y: 0.09327349, z: -0.049307194}
+  m_LocalPosition: {x: -0.32858717, y: 0.09327349, z: -0.04930719}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1807,8 +1808,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   topicName: Linked List
-  controlsHint: 'Pick a shape and a NODE, then tap Insert or Delete. Node 1 is the head, and end is after the last node. Tap Go to Quiz when you''re ready.'
-  hintDuration: 6
+  controlsHint: Pick a shape and a NODE, then tap Insert or Delete. Node 1 is the
+    head, and end is after the last node. Tap Go to Quiz when you're ready.
 --- !u!4 &1333766596
 Transform:
   m_ObjectHideFlags: 0
