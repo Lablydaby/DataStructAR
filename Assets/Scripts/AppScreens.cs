@@ -16,6 +16,7 @@ public class AppScreens : MonoBehaviour
     // Menu
     private readonly List<MenuCard> cards = new List<MenuCard>();
     private Button explore;
+    private TextMeshProUGUI menuSubtitle;
 
     // Lesson
     private RectTransform lessonContent;
@@ -40,10 +41,11 @@ public class AppScreens : MonoBehaviour
     private class MenuCard
     {
         public string topic;
-        public Image outer, fill, iconTile, radioOuter, radioFill;
+        public Image outer, fill, iconTile, divider, practiceRing;
         public List<Image> cells = new List<Image>();
-        public TextMeshProUGUI title;
-        public RectTransform chips;
+        public List<Image> dots = new List<Image>();
+        public TextMeshProUGUI title, desc, quizLabel, best, practiceText;
+        public RectTransform chevron, progress, practiceCheck;
     }
 
     private class QuizOption
@@ -135,10 +137,31 @@ public class AppScreens : MonoBehaviour
         RectTransform root = DK.Screen(panel, Portrait, false, DK.AppBg);
         DK.Decorate(root);
 
-        TextMeshProUGUI title = DK.Text(root, "Are you ready to learn Data Structures?", 28, DK.Indigo900, true);
-        DK.Row(title, 28, 28, 72, 84);
-        TextMeshProUGUI subtitle = DK.Text(root, "Choose a topic to start its lesson.", 15, DK.Indigo500);
-        DK.Row(subtitle, 28, 28, 162, 24);
+        // Heading, subtitle and topic cards stack from the top, so cards with a progress row push the rest down.
+        // They scroll in the space above the Explore button, so on short screens they never run under it.
+        RectTransform viewport = UiKit.Create("Scroll", root);
+        DK.Stretch(viewport, 0, 0, 0, 32 + 58 + 12);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        viewport.gameObject.AddComponent<Image>().color = DK.Clear; // Catches drags between the cards
+
+        RectTransform column = UiKit.Create("Column", viewport);
+        DK.Row(column, 28, 28, 0, 0);
+        DK.Column(column.gameObject, 8, new RectOffset(0, 0, 72, 12));
+        column.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        ScrollRect scroll = viewport.gameObject.AddComponent<ScrollRect>();
+        scroll.viewport = viewport;
+        scroll.content = column;
+        scroll.horizontal = false;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+
+        TextMeshProUGUI title = DK.Text(column, "Are you ready to learn Data Structures?", 28, DK.Indigo900, true);
+        title.lineSpacing = -12;
+        menuSubtitle = DK.Text(column, "", 15, DK.Indigo500);
+        DK.Size(UiKit.Create("Gap", column), -1, 20);
+
+        RectTransform list = UiKit.Create("Topics", column);
+        DK.Column(list.gameObject, 12);
 
         string[] dirs = { "row", "row", "column", "row" };
         int[] counts = { 4, 3, 3, 3 };
@@ -147,13 +170,18 @@ public class AppScreens : MonoBehaviour
         {
             string topic = QuizManager.Topics[i];
             MenuCard card = new MenuCard { topic = topic };
-            card.outer = DK.Outlined(root, DK.White, DK.Lavender300, 14, 1, "Card-" + topic);
+            card.outer = DK.Outlined(list, DK.White, DK.Lavender300, 16, 1, "Card-" + topic);
             card.fill = DK.Fill(card.outer);
-            DK.Row(card.outer, 28, 28, 214 + i * 92, 80);
+            DK.Column(card.outer.gameObject, 12, new RectOffset(14, 16, 14, 14));
             DK.MakeButton(card.outer, () => SelectTopic(topic));
 
-            card.iconTile = DK.Box(card.outer.transform, DK.Lavender100, 10, "IconTile");
-            DK.Anchor(card.iconTile, new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(52, 48));
+            // Icon tile, name and one-line description, chevron
+            RectTransform head = UiKit.Create("Head", card.outer.transform);
+            DK.Line(head.gameObject, 14);
+            DK.Size(head, -1, 48);
+
+            card.iconTile = DK.Box(head, DK.Lavender100, 12, "IconTile");
+            DK.Size(card.iconTile, 48, 48);
             RectTransform cellRow = UiKit.Create("Cells", card.iconTile.transform);
             UiKit.Stretch(cellRow, Vector2.zero, Vector2.one);
             if (dirs[i] == "row") DK.Line(cellRow.gameObject, 3, TextAnchor.MiddleCenter);
@@ -165,23 +193,80 @@ public class AppScreens : MonoBehaviour
                 card.cells.Add(cell);
             }
 
-            card.title = DK.Text(card.outer.transform, topic, 18, DK.Indigo900, true);
-            DK.Anchor(card.title, new Vector2(0, 0.5f), new Vector2(86, 13), new Vector2(200, 26));
+            RectTransform words = UiKit.Create("Words", head);
+            DK.Column(words.gameObject, 2, null, TextAnchor.MiddleLeft);
+            DK.Size(words, -1, -1, 1);
+            card.title = DK.Text(words, topic, 18, DK.Indigo900, true);
             card.title.enableWordWrapping = false;
+            card.desc = DK.Text(words, Description(topic), 13, DK.Lavender500);
+            card.desc.enableWordWrapping = false;
 
-            card.chips = UiKit.Create("Chips", card.outer.transform);
-            DK.Anchor(card.chips, new Vector2(0, 0.5f), new Vector2(86, -15), new Vector2(200, 22));
-            DK.Line(card.chips.gameObject, 6);
+            RectTransform chevronCell = UiKit.Create("Chevron", head);
+            DK.Size(chevronCell, 20, 20);
+            card.chevron = DK.Icon(chevronCell, "chevron-right", 20, DK.Lavender400);
+            DK.Anchor(card.chevron, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20, 20));
 
-            card.radioOuter = DK.Outlined(card.outer.transform, DK.White, DK.Lavender400, 11, 1.5f, "Radio");
-            card.radioFill = DK.Fill(card.radioOuter);
-            DK.Anchor(card.radioOuter, new Vector2(1, 0.5f), new Vector2(-18, 0), new Vector2(22, 22));
+            // Progress, once the topic is started: best quiz score as bars, and whether the puzzle is solved
+            card.progress = UiKit.Create("Progress", card.outer.transform);
+            HorizontalLayoutGroup row = DK.Line(card.progress.gameObject, 10);
+            row.padding = new RectOffset(0, 0, 12, 0);
+            card.divider = DK.Box(card.progress, DK.Lavender100, 0, "Divider");
+            card.divider.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            RectTransform line = card.divider.rectTransform;
+            line.anchorMin = new Vector2(0, 1);
+            line.anchorMax = new Vector2(1, 1);
+            line.pivot = new Vector2(0.5f, 1);
+            line.offsetMin = new Vector2(0, -1);
+            line.offsetMax = Vector2.zero;
+
+            card.quizLabel = DK.Caps(card.progress, "QUIZ", 10, DK.Lavender500);
+            RectTransform dots = UiKit.Create("Dots", card.progress);
+            DK.Line(dots.gameObject, 3);
+            for (int d = 0; d < Progress.QuestionCount(topic); d++)
+            {
+                Image dot = DK.Box(dots, DK.Hex(0xE4E2EE), 3, "Dot");
+                DK.Size(dot, 14, 6);
+                card.dots.Add(dot);
+            }
+            card.best = DK.Text(card.progress, "", 12, DK.Indigo900, true);
+            card.best.enableWordWrapping = false;
+            DK.Size(UiKit.Create("Space", card.progress), 0, -1, 1);
+
+            RectTransform practice = UiKit.Create("Practice", card.progress);
+            DK.Line(practice.gameObject, 6);
+            card.practiceRing = DK.Outlined(practice, DK.White, DK.Dash, 8, 1.5f, "Ring");
+            DK.Size(card.practiceRing, 16, 16);
+            card.practiceCheck = DK.Icon(card.practiceRing.transform, "check", 11, DK.White);
+            DK.Anchor(card.practiceCheck, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(11, 11));
+            card.practiceText = DK.Text(practice, "Practice", 12, DK.Lavender500, true);
+            card.practiceText.enableWordWrapping = false;
+
             cards.Add(card);
         }
 
         explore = DK.Pill(root, "Explore", DK.Indigo700, DK.White, 14, 17, ShowLesson, null, "arrow-right");
         DK.BottomRow(explore, 28, 28, 32, 58);
     }
+
+    private static string Description(string topic)
+    {
+        switch (topic)
+        {
+            case "Array": return "Indexed, fixed-size";
+            case "Linked List": return "Nodes joined by pointers";
+            case "Stack": return "Last in, first out";
+            case "Queue": return "First in, first out";
+            default: return "";
+        }
+    }
+
+    private static void Tint(RectTransform icon, Color color)
+    {
+        foreach (Graphic graphic in icon.GetComponentsInChildren<Graphic>(true))
+            graphic.color = color;
+    }
+
+    private static Color Faint(Color c, float alpha) => new Color(c.r, c.g, c.b, alpha);
 
     public void SelectTopic(string topic)
     {
@@ -192,38 +277,42 @@ public class AppScreens : MonoBehaviour
     private void RefreshMenu()
     {
         string selected = quiz.Topic;
+        bool anyStarted = false;
+        foreach (string topic in QuizManager.Topics)
+            anyStarted |= Progress.HasQuizScore(topic) || Progress.PracticeDone(topic);
+        menuSubtitle.text = anyStarted
+            ? "Choose a topic to start its lesson."
+            : "Each topic has a lesson, an AR scene, a quiz and a puzzle.";
+
         foreach (MenuCard card in cards)
         {
             bool on = card.topic == selected;
             card.outer.color = on ? DK.Indigo700 : DK.Lavender300;
             card.fill.color = on ? DK.Indigo700 : DK.White;
-            card.iconTile.color = on ? new Color(0.97f, 0.98f, 1f, 0.14f) : DK.Lavender100;
+            card.iconTile.color = on ? Faint(DK.Lavender50, 0.14f) : DK.Lavender100;
             foreach (Image cell in card.cells)
                 cell.color = on ? DK.Lavender50 : DK.Lavender400;
             card.title.color = on ? DK.White : DK.Indigo900;
+            card.desc.color = on ? DK.Lavender300 : DK.Lavender500;
+            Tint(card.chevron, on ? DK.Lavender50 : DK.Lavender400);
 
-            // Selected: thick light ring around an indigo centre
-            card.radioOuter.color = on ? DK.Lavender50 : DK.Lavender400;
-            card.radioFill.color = on ? DK.Indigo700 : DK.White;
-            DK.Stretch(card.radioFill.rectTransform, on ? 6 : 1.5f, on ? 6 : 1.5f, on ? 6 : 1.5f, on ? 6 : 1.5f);
+            // Started topics show their best quiz score as bars and whether the puzzle is solved
+            bool scored = Progress.HasQuizScore(card.topic);
+            bool solved = Progress.PracticeDone(card.topic);
+            card.progress.gameObject.SetActive(scored || solved);
+            int best = scored ? Progress.BestScore(card.topic) : 0;
+            card.divider.color = on ? Faint(DK.Lavender50, 0.16f) : DK.Lavender100;
+            card.quizLabel.color = on ? DK.Lavender300 : DK.Lavender500;
+            for (int d = 0; d < card.dots.Count; d++)
+                card.dots[d].color = d < best ? (on ? DK.Lavender50 : DK.Indigo700)
+                    : on ? Faint(DK.Lavender50, 0.22f) : DK.Hex(0xE4E2EE);
+            card.best.text = scored ? $"{best}/{card.dots.Count}" : "–";
+            card.best.color = on ? DK.White : DK.Indigo900;
 
-            DK.ClearChildren(card.chips);
-            List<string> chips = new List<string>();
-            if (Progress.HasQuizScore(card.topic))
-                chips.Add($"Best {Progress.BestScore(card.topic)}/{Progress.QuestionCount(card.topic)}");
-            if (Progress.PracticeDone(card.topic))
-                chips.Add("Practice done");
-            if (chips.Count == 0)
-                chips.Add("Not started");
-            foreach (string chip in chips)
-            {
-                bool idle = chip == "Not started";
-                Image bg = DK.Box(card.chips, on ? new Color(0.97f, 0.98f, 1f, 0.16f) : idle ? DK.Hex(0xF1F1F4) : DK.Lavender100, 6, "Chip");
-                HorizontalLayoutGroup pad = DK.Line(bg.gameObject, 0, TextAnchor.MiddleCenter);
-                pad.padding = new RectOffset(8, 8, 4, 4);
-                TextMeshProUGUI text = DK.Text(bg.transform, chip, 12, on ? DK.Lavender50 : idle ? DK.Lavender500 : DK.Indigo700, true, TextAlignmentOptions.Center);
-                text.enableWordWrapping = false;
-            }
+            card.practiceRing.color = solved ? DK.Green : on ? Faint(DK.Lavender50, 0.5f) : DK.Dash;
+            DK.Fill(card.practiceRing).color = solved ? DK.Green : on ? DK.Indigo700 : DK.White;
+            card.practiceCheck.gameObject.SetActive(solved);
+            card.practiceText.color = solved ? (on ? DK.White : DK.Green) : on ? DK.Lavender300 : DK.Lavender500;
         }
 
         bool hasTopic = !string.IsNullOrEmpty(selected);

@@ -461,6 +461,10 @@ public static class ScreenshotTour
         }
 
         Shot(2f, "menu-progress");
+        // A shorter 16:9 phone: the topic cards must scroll above the Explore button, not run under it
+        Do(0.2f, () => SetGameViewSize(720, 1280));
+        Shot(0.5f, "menu-progress-16x9");
+        Do(0.2f, () => SetGameViewSize(PortraitWidth, PortraitHeight));
         Do(1f, () => { PlayerPrefs.SetInt("ReturnedFromAR", 0); PlayerPrefs.Save(); });
         return steps;
     }
